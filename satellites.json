@@ -1,11 +1,21 @@
 {
   "station": null,
-  "max_frames": 400,
-  "max_pages": 6,
+  "days": 14,
+  "max_frames": 300,
+  "max_pages": 4,
   "only_good": true,
   "satellites": [
-    {"norad": 60237, "name": "GRBBeta"},
-    {"norad": 59112, "name": "SONATE-2"},
-    {"norad": 44885, "name": "FloripaSat-1"}
+    {
+      "norad": 60237,
+      "name": "GRBBeta"
+    },
+    {
+      "norad": 59112,
+      "name": "SONATE-2"
+    },
+    {
+      "norad": 44885,
+      "name": "FloripaSat-1", "days": 0
+    }
   ]
 }
