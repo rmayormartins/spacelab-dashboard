@@ -1,0 +1,35 @@
+name: coletar-satnogs
+
+on:
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: coletar-satnogs
+  cancel-in-progress: false
+
+jobs:
+  coletar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Coletar quadros
+        env:
+          SATNOGS_DB_TOKEN: ${{ secrets.SATNOGS_DB_TOKEN }}
+        run: python scripts/collect.py
+      - name: Publicar data/
+        run: |
+          git config user.name "spacelab-dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet && echo "sem novidades" && exit 0
+          git commit -m "data: coleta SatNOGS $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push
