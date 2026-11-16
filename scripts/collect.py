@@ -16,7 +16,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, "data")
@@ -27,12 +27,31 @@ SKIP_EXT = re.compile(r"\.(png|jpe?g|gif|ogg|webp)(\?|$)", re.I)
 TS_RX = re.compile(r"(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})")
 
 
-def http(url, headers=None, binary=False, tries=4):
+def note(level, msg):
+    """Imprime e gera anotacao visivel no resumo da execucao do GitHub Actions."""
+    print(f"::{level}::{msg}" if os.environ.get("GITHUB_ACTIONS") else f"[{level}] {msg}", flush=True)
+    path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if path:
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(f"- **{level}**: {msg}\n")
+
+
+def explain(e):
+    if isinstance(e, urllib.error.HTTPError):
+        return f"HTTP {e.code} {e.reason}"
+    if isinstance(e, urllib.error.URLError):
+        return f"sem conexao ({e.reason})"
+    if isinstance(e, TimeoutError):
+        return "tempo esgotado"
+    return f"{type(e).__name__}: {e}"
+
+
+def http(url, headers=None, binary=False, tries=3, timeout=90):
     """GET com espera educada em 429/5xx. Retorna (corpo, cabecalhos)."""
     req = urllib.request.Request(url, headers={"User-Agent": UA, **(headers or {})})
     for attempt in range(tries):
         try:
-            with urllib.request.urlopen(req, timeout=40) as r:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
                 body = r.read()
                 return (body if binary else body.decode("utf-8")), r.headers
         except urllib.error.HTTPError as e:
@@ -77,6 +96,9 @@ def collect_network(norad, cfg, done_obs):
         q["status"] = "good"
     if cfg.get("station"):
         q["ground_station"] = cfg["station"]
+    if cfg.get("days"):
+        since = datetime.now(timezone.utc) - timedelta(days=int(cfg["days"]))
+        q["start"] = since.strftime("%Y-%m-%dT%H:%M:%SZ")
     url = f"{NET}/observations/?{urllib.parse.urlencode(q)}"
     frames, pages, seen = [], 0, []
     budget = int(cfg.get("max_frames", 400))
@@ -103,7 +125,7 @@ def collect_network(norad, cfg, done_obs):
                 try:
                     raw, _ = http(furl, binary=True)
                 except Exception as e:  # um quadro ruim nao derruba a coleta
-                    print(f"  quadro falhou ({e}): {furl}", flush=True)
+                    print(f"  quadro falhou ({explain(e)}): {furl}", flush=True)
                     ok = False
                     continue
                 if raw:
@@ -154,7 +176,14 @@ def main():
     os.makedirs(DATA, exist_ok=True)
     token = os.environ.get("SATNOGS_DB_TOKEN", "").strip()
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    index, errors = [], 0
+    index, errors, reasons = [], 0, []
+    for label, probe in (("Network", f"{NET}/stations/?format=json&id=1"), ("DB", f"{DB}/modes/?format=json")):
+        t0 = time.time()
+        try:
+            http(probe, tries=1, timeout=30)
+            print(f"sonda {label}: OK em {time.time() - t0:.1f}s", flush=True)
+        except Exception as e:
+            note("warning", f"sonda SatNOGS {label} falhou em {time.time() - t0:.0f}s: {explain(e)}")
     for sat in cfg.get("satellites", []):
         norad, name = sat.get("norad"), sat.get("name") or str(sat.get("norad"))
         if not norad:
@@ -166,11 +195,13 @@ def main():
         print(f"{name} ({norad}): {len(frames)} quadros em cache", flush=True)
         new, seen = [], []
         try:
-            new, seen = collect_network(norad, cfg, done)
+            scfg = {**cfg, **{k: v for k, v in sat.items() if k in ("days", "station", "max_frames", "max_pages", "only_good")}}
+            new, seen = collect_network(norad, scfg, done)
             print(f"  network: {len(new)} quadros novos em {len(seen)} observacoes", flush=True)
         except Exception as e:
             errors += 1
-            print(f"  network falhou: {e}", flush=True)
+            reasons.append(f"{name}: Network {explain(e)}")
+            note("warning", f"{name} ({norad}): Network API falhou: {explain(e)}")
         if token:
             try:
                 dbf = collect_db(norad, token, int(cfg.get("max_frames", 400)))
@@ -178,7 +209,7 @@ def main():
                 new += dbf
             except Exception as e:
                 errors += 1
-                print(f"  db falhou: {e}", flush=True)
+                note("warning", f"{name} ({norad}): DB falhou: {explain(e)}")
         merged = {}
         for f in frames + new:
             if f.get("hex") and f.get("t"):
@@ -197,12 +228,29 @@ def main():
                 json.dump(out, f, separators=(",", ":"))
         index.append({"norad": norad, "name": name, "frames": len(frames),
                       "last": frames[-1]["t"] if frames else None, "updated": out["updated"]})
+    # catalogo para a busca do dashboard quando o navegador bloqueia o SatNOGS DB
+    try:
+        body, _ = http(f"{DB}/satellites/?format=json")
+        items = [{"n": s["norad_cat_id"], "name": s.get("name") or "", "alt": s.get("names") or "",
+                  "st": s.get("status") or "",
+                  "dec": [t["decoder"] for t in (s.get("telemetries") or []) if t.get("decoder")]}
+                 for s in json.loads(body) if s.get("norad_cat_id")]
+        cat_path = os.path.join(DATA, "catalog.json")
+        if items and load(cat_path, {}).get("items") != items:
+            with open(cat_path, "w", encoding="utf-8") as f:
+                json.dump({"updated": now, "items": items}, f, separators=(",", ":"), ensure_ascii=False)
+        print(f"catalogo: {len(items)} satelites", flush=True)
+    except Exception as e:
+        note("warning", f"catalogo do SatNOGS DB falhou: {explain(e)}")
     old_index = load(os.path.join(DATA, "index.json"), {})
     if old_index.get("satellites") != index:
         with open(os.path.join(DATA, "index.json"), "w", encoding="utf-8") as f:
             json.dump({"updated": now, "satellites": index}, f, indent=1)
-    if errors and not any(s["frames"] for s in index):
-        sys.exit("todas as coletas falharam")
+    total = sum(s["frames"] for s in index)
+    note("notice", f"coleta terminou: {total} quadros em data/, {errors} erros")
+    if errors and not total:
+        note("error", "nenhum quadro coletado. Motivos: " + "; ".join(reasons[:4]))
+        sys.exit(1)
 
 
 if __name__ == "__main__":
