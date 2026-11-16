@@ -212,7 +212,7 @@ footer{margin-top:40px;border-top:1px solid var(--ln);padding-top:12px;color:var
 <p><b class="amb">Fluxo.</b> Catálogo e transmissores vêm de db.satnogs.org/api. As observações vêm de network.satnogs.org/api/observations e cada item de <code>demoddata</code> é um arquivo binário com um quadro. A telemetria do DB (<code>/api/telemetry/</code>) exige token pessoal.</p>
 <p><b class="amb">Se o navegador bloquear (CORS).</b> Os LEDs no topo mostram o que passou. A rota garantida é o coletor em GitHub Actions deste repositório, que grava <code>data/&lt;norad&gt;.json</code> e o painel lê como arquivo local.</p>
 <p><b class="amb">Motor SpaceLab.</b> Procura a sync word 5D E6 2A 7E, lê a size tag do NGHam, remove o embaralhamento CCSDS, corrige erros com Reed-Solomon e confere o CRC-16. Os campos seguem os arquivos do spacelab-decoder (GPLv3, SpaceLab/UFSC). Os campos do GOLDS-UFSC devem ser conferidos com o primeiro quadro real.</p>
-<p><b class="amb">Motor oficial.</b> Baixa o pacote satnogs-decoders (AGPLv3, Libre Space Foundation) do PyPI e roda no navegador com Pyodide. "Forçar" testa todos os decoders e ordena: o decoder cadastrado no DB primeiro, depois os que rejeitam ruído, depois os permissivos.</p>
+<p><b class="amb">Motor oficial.</b> Baixa o pacote satnogs-decoders (AGPLv3, Libre Space Foundation) do PyPI e roda no navegador com Pyodide. No modo automático só é aplicado o decoder cadastrado no SatNOGS DB para o satélite. O botão "forçar decodificação" testa todos e, se nenhum cadastrado servir, aplica o melhor como PALPITE: os campos têm nomes de outro satélite e precisam ser conferidos.</p>
 <p><b class="amb">Dados.</b> SatNOGS, CC BY-SA. Valores decodificados por força bruta são hipóteses até baterem com a documentação do satélite.</p>
 </div></details>
 
@@ -457,7 +457,7 @@ async function loadCatalog(force){
     catch(e2){if(c&&c.items){S.catalog=c.items;catInfo('cache antigo');}else{$('cat-info').textContent='catálogo indisponível ('+why(e)+'). Use os atalhos ou + NORAD.';}}}
 }
 function catInfo(src){const withDec=S.catalog.filter(s=>s.dec.length).length;$('cat-info').textContent='catálogo: '+S.catalog.length+' satélites, '+withDec+' com decoder cadastrado ('+src+')';}
-function syncNames(){let ch=false;for(const s of S.sats){if(!s.norad)continue;const c=S.catalog.find(x=>x.n===s.norad);if(!c)continue;if(c.name&&c.name!==s.name){s.name=c.name;ch=true;}for(const d of c.dec){const n=normDec(d);if(!s.prefer.includes(n)){s.prefer.push(n);ch=true;}}}if(ch){save();renderSats();}}
+function syncNames(){let ch=false;for(const s of S.sats){if(!s.norad)continue;const c=S.catalog.find(x=>x.n===s.norad);if(!c)continue;if(c.name&&c.name!==s.name){s.name=c.name;ch=true;if(!s.layout){const m=LAYRX.find(([rx])=>rx.test(c.name));if(m){s.layout=m[1];ch=true;}}}for(const d of c.dec){const n=normDec(d);if(!s.prefer.includes(n)){s.prefer.push(n);ch=true;}}}if(ch){save();renderSats();}}
 function search(){const q=$('q').value.trim().toLowerCase(),box=$('res');if(q.length<2){box.style.display='none';return;}
   const hit=S.catalog.filter(s=>String(s.n).includes(q)||s.name.toLowerCase().includes(q)||s.alt.toLowerCase().includes(q)).sort((a,b)=>(b.st==='alive')-(a.st==='alive')||(b.dec.length>0)-(a.dec.length>0)).slice(0,40);
   box.style.display='block';box.innerHTML=hit.length?hit.map(s=>'<div data-n="'+s.n+'"><span class="n">'+s.n+'</span><span>'+esc(s.name)+'</span><span class="dim">'+esc(s.st||'')+'</span><span class="d">'+esc(s.dec.join(', '))+'</span></div>').join(''):'<div class="dim">nada encontrado. Tente + NORAD.</div>';}
@@ -467,26 +467,26 @@ function mkSat(o){const lay=o.layout!==undefined?o.layout:((LAYRX.find(([rx])=>r
   return{key:o.key||(o.norad?'n'+o.norad:'x-'+slug(o.name)),name:o.name||('NORAD '+o.norad),norad:o.norad||null,layout:lay,decoder:o.decoder||'auto',prefer:(o.prefer||[]).map(normDec),custom:o.custom||[],pins:o.pins||null,frames:[],keys:new Set(),auto:null,rank:null,tx:null,busy:false};}
 function addSat(o){const key=o.key||(o.norad?'n'+o.norad:'x-'+slug(o.name));let s=S.sats.find(x=>x.key===key);if(!s){s=mkSat(o);S.sats.push(s);log('satélite adicionado: '+s.name+(s.norad?' ('+s.norad+')':''));}S.active=s.key;S.sel=null;save();renderAll();loadTx(s);return s;}
 function removeSat(key){S.sats=S.sats.filter(s=>s.key!==key);if(S.active===key)S.active=S.sats[0]?S.sats[0].key:null;S.sel=null;save();renderAll();}
-async function loadTx(sat){if(!sat.norad||sat.tx)return;try{const j=await jget(API.db+'/transmitters/?format=json&satellite__norad_cat_id='+sat.norad);sat.tx=j.filter(t=>t.downlink_low).map(t=>({d:t.description,f:t.downlink_low,m:t.mode,b:t.baud,a:t.alive}));if(sat.key===S.active)renderSatCfg();}catch(e){sat.tx=null;}}
+async function loadTx(sat){if(!sat.norad||sat.tx)return;try{const j=await jget(API.db+'/transmitters/?format=json&satellite__norad_cat_id='+sat.norad);sat.tx=j.filter(t=>t.downlink_low&&(t.norad_cat_id==null||t.norad_cat_id===sat.norad)).map(t=>({d:t.description,f:t.downlink_low,m:t.mode,b:t.baud,a:t.alive}));if(sat.key===S.active)renderSatCfg();}catch(e){sat.tx=null;}}
 
 // ---------- ingestao ----------
 function addFrames(sat,items){let n=0;for(const it of items){const bytes=it.bytes||fromHex(it.hex||'');if(!bytes.length)continue;const hex=toHex(bytes),t=it.t||Date.now(),k=hex+'|'+t+'|'+(it.gs||'');if(sat.keys.has(k))continue;sat.keys.add(k);
     sat.frames.push({t,bytes,hex,obs:it.obs||null,gs:it.gs||null,station:it.station||'',src:it.src||'manual',dec:null});n++;}
   sat.frames.sort((a,b)=>a.t-b.t);return n;}
 function tsFromUrl(u){const m=/(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})/.exec(u);return m?Date.parse(m[1]+'T'+m[2]+':'+m[3]+':'+m[4]+'Z'):null;}
-async function fetchRepo(sat,quiet){const name=sat.norad||slug(sat.name);try{const r=await fetch('data/'+name+'.json',{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();
+async function fetchRepo(sat,quiet){const name=sat.norad||slug(sat.name);try{const r=await fetch('data/'+name+'.json',{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();if(j.schema!==2){log(sat.name+': data/'+name+'.json é de uma coleta antiga que misturava satélites; ignorei. Rode o coletor novo.','w');return 0;}
     const n=addFrames(sat,(j.frames||[]).map(f=>({t:Date.parse(f.t),hex:f.hex,obs:f.obs,gs:f.gs,station:f.station,src:f.src||'repo'})));setLed('repo','ok');log(sat.name+': data/'+name+'.json, '+n+' quadros novos (coletor atualizou em '+(j.updated||'?')+')','g');return n;}
   catch(e){if(!quiet)log(sat.name+': sem data/'+name+'.json no repositório ('+e.message+')','t');return 0;}}
 async function fetchNetwork(sat,budget){if(!sat.norad){log(sat.name+': sem NORAD, pulei a Network','w');return 0;}
-  const st=String(S.cfg.station||'').trim();let end=null,pages=0;const seen=new Set(),urls=[];setLed('net','wait');
-  try{while(pages<10&&urls.length<budget){let u=API.net+'/observations/?format=json&satellite__norad_cat_id='+sat.norad;if(!S.cfg.allstatus)u+='&status=good';if(st)u+='&ground_station='+encodeURIComponent(st);if(end)u+='&end='+encodeURIComponent(end);
+  const st=String(S.cfg.station||'').trim();let end=null,pages=0,other=0;const seen=new Set(),urls=[];setLed('net','wait');
+  try{while(pages<10&&urls.length<budget){let u=API.net+'/observations/?format=json&norad_cat_id='+sat.norad+'&satellite__norad_cat_id='+sat.norad;if(!S.cfg.allstatus)u+='&status=good';if(st)u+='&ground_station='+encodeURIComponent(st);if(end)u+='&end='+encodeURIComponent(end);
       const j=await jget(u);pages++;const arr=Array.isArray(j)?j:(j.results||[]);if(!arr.length)break;let oldest=null,fresh=0;
-      for(const o of arr){if(seen.has(o.id))continue;seen.add(o.id);fresh++;if(!oldest||o.start<oldest)oldest=o.start;
+      for(const o of arr){if(seen.has(o.id))continue;seen.add(o.id);fresh++;if(!oldest||o.start<oldest)oldest=o.start;if(o.norad_cat_id!=null&&o.norad_cat_id!==sat.norad){other++;continue;}
         for(const d of(o.demoddata||[])){const url=d.payload_demod;if(!url||/\.(png|jpe?g|gif|ogg|webp)(\?|$)/i.test(url))continue;urls.push({url,obs:o.id,gs:o.ground_station,station:o.station_name||'',t:tsFromUrl(url)||Date.parse(o.start)});}}
       if(!fresh||!oldest||oldest===end)break;end=oldest;}
     setLed('net','ok');}catch(e){setLed('net','bad');log(sat.name+': Network API falhou: '+why(e),'e');if(!urls.length)return 0;}
   urls.sort((a,b)=>b.t-a.t);const todo=urls.slice(0,budget).filter(u=>!sat.urls||!sat.urls.has(u.url));sat.urls=sat.urls||new Set();
-  log(sat.name+': '+seen.size+' observações, '+urls.length+' quadros listados, baixando '+todo.length);if(!todo.length)return 0;
+  log(sat.name+': '+(seen.size-other)+' observações, '+urls.length+' quadros listados, baixando '+todo.length+(other?' ('+other+' observações de outros satélites descartadas)':''),other?'w':'');if(!todo.length)return 0;
   let ok=0,fail=0,i=0,abort=false,lastErr=null;const got=[];setLed('media','wait');
   async function worker(){while(i<todo.length&&!abort){const u=todo[i++];try{const r=await xfetch(u.url);if(!r.ok)throw new Error('HTTP '+r.status);const b=new Uint8Array(await r.arrayBuffer());sat.urls.add(u.url);got.push({t:u.t,bytes:b,obs:u.obs,gs:u.gs,station:u.station,src:'net'});ok++;}catch(e){fail++;lastErr=e;if(fail>=4&&!ok)abort=true;}}}
   await Promise.all(Array.from({length:6},worker));
@@ -522,8 +522,11 @@ async function forceSat(sat,quiet){if(!sat.frames.length){if(!quiet)log(sat.name
   if(sat.layout){await decodeSat(sat);if(!quiet)log(sat.name+': usa o motor SpaceLab ('+sat.layout+'). Para testar os oficiais, troque o layout para "nenhum".','w');return;}
   try{await loadPy();}catch(e){await decodeSat(sat);return;}
   const smp=sample(sat.frames,16);const rank=JSON.parse(PY.fn.force(JSON.stringify(smp.map(f=>f.hex)),JSON.stringify(sat.prefer)));sat.rank={n:smp.length,list:rank};
-  const pick=rank.find(r=>r.preferred)||rank.find(r=>!r.generic)||rank[0]||null;sat.auto=pick?pick.name:null;
-  log(sat.name+': força bruta em '+smp.length+' quadros, '+rank.length+' decoders aceitaram. Escolhido: '+(pick?pick.name+(pick.preferred?' (cadastrado no DB)':pick.generic?' (permissivo, é palpite)':' (estrito)'):'nenhum'),pick?'g':'w');
+  let pick=rank.find(r=>r.preferred)||null;
+  if(!pick&&!quiet)pick=rank.find(r=>!r.generic)||rank[0]||null;sat.auto=pick?pick.name:null;
+  if(pick&&pick.preferred)log(sat.name+': '+pick.name+' é o decoder cadastrado no SatNOGS DB e aceitou '+pick.ok+' de '+smp.length+' quadros da amostra','g');
+  else if(pick)log(sat.name+': nenhum decoder cadastrado serviu. Apliquei '+pick.name+' como PALPITE ('+pick.ok+' de '+smp.length+' quadros). Os nomes dos campos são de outro satélite e podem não significar nada aqui.','w');
+  else log(sat.name+': nenhum decoder cadastrado para este satélite decodificou os quadros. '+rank.length+' decoders de outros satélites aceitaram a amostra; clique em "forçar decodificação" para aplicar o melhor palpite.','w');
   await decodeSat(sat);}
 function forceOne(sat,f){if(!PY.ready)return loadPy().then(()=>forceOne(sat,f));const rank=JSON.parse(PY.fn.force(JSON.stringify([f.hex]),JSON.stringify(sat.prefer)));sat.rank={n:1,list:rank,one:utc(f.t)};renderRank();log('quadro '+utc(f.t)+': '+rank.length+' decoders aceitaram');}
 
@@ -541,6 +544,7 @@ async function decodeSat(sat){const lay=layoutOf(sat);for(const f of sat.frames)
   for(const c of sat.custom)for(const f of sat.frames){const v=readField(f.bytes,c);if(v==null)continue;f.dec.fields['x_'+c.name]=v;f.dec.meta['x_'+c.name]={name:c.name+' @'+c.off+' '+c.type,unit:c.unit||''};if(!f.dec.engine){f.dec.engine='cu';f.dec.label='campo manual';}}
 }
 const isDecoded=f=>f.dec&&(f.dec.engine==='sl'||f.dec.engine==='of');
+function isGuess(sat){if(!sat||sat.layout)return false;const n=sat.decoder!=='auto'?sat.decoder:sat.auto;return!!n&&n!=='none'&&!sat.prefer.includes(normDec(n));}
 
 // ---------- graficos ----------
 function setupCanvas(cv){const dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);}const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);g.font='10px ui-monospace,Menlo,Consolas,monospace';return{g,w,h};}
@@ -585,7 +589,7 @@ function renderTiles(){const s=activeSat(),el=$('tiles');if(!s){el.innerHTML='';
   const fr=viewFrames(s),dec=fr.filter(isDecoded).length,gs=new Set(fr.map(f=>f.gs||f.station).filter(Boolean)).size,last=fr[fr.length-1];
   const eng=s.layout?'SpaceLab':(s.decoder!=='auto'?s.decoder:(s.auto||(PY.ready?'sem decoder':'nativo')));
   const sl=fr.filter(f=>f.dec&&f.dec.sl&&f.dec.sl.ngham),crc=sl.filter(f=>f.dec.sl.crc_ok).length,fixed=sl.reduce((a,f)=>a+Math.max(0,f.dec.sl.ngham.rs||0),0);
-  const T=[['quadros',fr.length,S.range?'na janela':'no total','SATNOGS'],['decodificados',fr.length?Math.round(dec/fr.length*100)+'%':'0%',dec+' de '+fr.length,'MOTOR'],['estações',gs,'receptoras distintas','SATNOGS'],['último quadro',last?'há '+ago(last.t):'nenhum',last?utc(last.t)+' UTC':'busque ou cole quadros','UTC'],['motor',eng,s.layout?'NGHam + layout '+s.layout:(PY.ready?'satnogs-decoders '+PY.ver:'AX.25 / CSP / texto'),'DECODE']];
+  const T=[['quadros',fr.length,S.range?'na janela':'no total','SATNOGS'],['decodificados',fr.length?Math.round(dec/fr.length*100)+'%':'0%',dec+' de '+fr.length,'MOTOR'],['estações',gs,'receptoras distintas','SATNOGS'],['último quadro',last?'há '+ago(last.t):'nenhum',last?utc(last.t)+' UTC':'busque ou cole quadros','UTC'],['motor',eng,s.layout?'NGHam + layout '+s.layout:(isGuess(s)?'PALPITE: decoder de outro satélite':PY.ready?'satnogs-decoders '+PY.ver:'AX.25 / CSP / texto'),'DECODE']];
   if(s.layout)T.push(['CRC NGHam',sl.length?Math.round(crc/sl.length*100)+'%':'n/d',sl.length?crc+' de '+sl.length+', '+fixed+' bytes corrigidos por RS':'nenhum quadro NGHam','FEC']);
   el.innerHTML=T.map(t=>'<div class="tile"><span class="s">'+t[3]+'</span><div class="l">'+t[0]+'</div><div class="v" title="'+esc(t[1])+'">'+esc(t[1])+'</div><div class="u">'+esc(t[2])+'</div></div>').join('');
   $('st-sub').textContent=s.name+(s.norad?' · NORAD '+s.norad:'')+(s.busy?' · buscando...':'');$('sim-banner').style.display=s.frames.some(f=>f.src==='sim')?'block':'none';}
@@ -594,7 +598,7 @@ const COLORS=['#58d3e8','#5fe08d','#b79cff','#ff8fa3','#e8d558','#4d9fff'];
 function renderCharts(){const s=activeSat();$('ranges').innerHTML=RANGES.map(r=>'<span class="chip'+(S.range===r[1]?' on':'')+'" data-r="'+r[1]+'">'+r[0]+'</span>').join('');
   const fr=s?viewFrames(s):[],pn=$('panels');let t0=fr.length?fr[0].t:Date.now()-36e5,t1=fr.length?fr[fr.length-1].t:Date.now();if(S.range){t0=Date.now()-S.range*36e5;t1=Date.now();}if(t1-t0<6e4){t0-=3e4;t1+=3e4;}
   const step=bars($('hist'),fr,t0,t1);$('hist-sub').textContent=fr.length?'barra = '+(step>=864e5?step/864e5+' d':step>=36e5?step/36e5+' h':step/6e4+' min')+' · laranja = decodificados':'sem quadros nesta janela';
-  const all=numericFields(fr).sort((a,b)=>(b.set.size>1)-(a.set.size>1)||b.pts.length-a.pts.length);const pins=s&&s.pins?new Set(s.pins):new Set(all.filter(e=>e.set.size>1).slice(0,12).map(e=>e.k));
+  const all=numericFields(fr).sort((a,b)=>b.set.size-a.set.size||b.pts.length-a.pts.length);const pins=s&&s.pins?new Set(s.pins):new Set(all.filter(e=>e.set.size>1).slice(0,12).map(e=>e.k));
   $('fields-sub').textContent=all.length?'('+all.filter(e=>pins.has(e.k)).length+' de '+all.length+' numéricos)':'';
   $('fields').innerHTML=all.map(e=>'<label><input type="checkbox" data-f="'+esc(e.k)+'"'+(pins.has(e.k)?' checked':'')+'> '+esc(e.k)+'</label>').join('')||'<span class="dim">nenhum campo numérico decodificado ainda</span>';
   const show=all.filter(e=>pins.has(e.k));
@@ -607,7 +611,7 @@ function summary(f){const d=f.dec;if(!d)return'';if(d.engine==='sl'||d.engine===
   if(d.text)return d.text.slice(0,70);if(d.ax)return d.ax.src+' > '+d.ax.dest+' '+toAscii(d.ax.info.slice(0,28));if(d.sl&&d.sl.ngham)return'NGHam '+(d.sl.crc_ok?'CRC ok':'CRC falhou')+', '+d.sl.type;return toHex(f.bytes.slice(0,20))+'...';}
 function renderFrames(){const s=activeSat(),el=$('frames');if(!s){el.innerHTML='';return;}const fr=viewFrames(s),show=fr.slice(-300).reverse();
   $('fr-sub').textContent=fr.length?'mostrando '+show.length+' de '+fr.length+', mais recentes primeiro':'';
-  el.innerHTML='<table><tr><th>UTC</th><th>origem</th><th>estação</th><th>B</th><th>motor</th><th>resumo</th></tr>'+show.map(f=>{const e=ENG[f.dec&&f.dec.engine]||['','BRUTO'];
+  const guess=isGuess(s);el.innerHTML='<table><tr><th>UTC</th><th>origem</th><th>estação</th><th>B</th><th>motor</th><th>resumo</th></tr>'+show.map(f=>{const e=guess&&f.dec&&f.dec.engine==='of'?['cu','PALPITE']:(ENG[f.dec&&f.dec.engine]||['','BRUTO']);
     return'<tr class="cl'+(S.sel===f?' sel':'')+'" data-t="'+f.t+'" data-h="'+f.hex.slice(0,24)+'"><td>'+utc(f.t)+'</td><td><span class="tag'+(f.src==='sim'?' sim':'')+'">'+esc(f.src.toUpperCase())+'</span>'+(f.obs?' <a href="https://network.satnogs.org/observations/'+encodeURIComponent(f.obs)+'/" target="_blank" rel="noopener">'+esc(f.obs)+'</a>':'')+'</td><td>'+esc(f.gs||'')+' <span class="dim">'+esc((f.station||'').slice(0,18))+'</span></td><td>'+f.bytes.length+'</td><td><span class="tag '+e[0]+'">'+e[1]+'</span></td><td class="w">'+esc(summary(f))+'</td></tr>';}).join('')+'</table>'+(show.length?'':'<div class="dim" style="padding:12px">sem quadros</div>');}
 function hexdump(a){let o='';for(let i=0;i<a.length;i+=16){const row=a.slice(i,i+16);o+='<span class="o">'+i.toString(16).padStart(4,'0')+'</span>  '+Array.from(row,hex2).join(' ').padEnd(47,' ')+'  <span class="a">'+esc(toAscii(row))+'</span>\n';}return o;}
 function renderDetail(){const s=activeSat(),el=$('detail');if(S.sel&&(!s||!s.frames.includes(S.sel)))S.sel=null;const f=S.sel;if(!s||!f){el.innerHTML='<span class="dim">Clique em um quadro para abrir o hexdump, as camadas detectadas e os campos.</span>';return;}
@@ -657,7 +661,7 @@ function exportCsv(){const s=activeSat();if(!s)return;const keys=[];const seen=n
 
 // ---------- diagnostico ----------
 async function diag(){log('testando enlaces...');await loadCatalog(true);const s=activeSat(),n=s&&s.norad||25544;
-  try{setLed('net','wait');const j=await jget(API.net+'/observations/?format=json&status=good&satellite__norad_cat_id='+n);const arr=Array.isArray(j)?j:(j.results||[]);setLed('net','ok');log('Network API: OK, '+arr.length+' observações na primeira página (NORAD '+n+')','g');
+  try{setLed('net','wait');const j=await jget(API.net+'/observations/?format=json&status=good&norad_cat_id='+n+'&satellite__norad_cat_id='+n);const arr=(Array.isArray(j)?j:(j.results||[])).filter(o=>o.norad_cat_id==null||o.norad_cat_id===n);setLed('net','ok');log('Network API: OK, '+arr.length+' observações na primeira página (NORAD '+n+')','g');
     const o=arr.find(x=>(x.demoddata||[]).length);if(o){try{setLed('media','wait');const r=await xfetch(o.demoddata[0].payload_demod);if(!r.ok)throw new Error('HTTP '+r.status);const b=await r.arrayBuffer();setLed('media','ok');log('Download de quadro: OK ('+b.byteLength+' bytes da observação '+o.id+')','g');}catch(e){setLed('media','bad');log('Download de quadro: '+why(e)+'. O coletor do repositório contorna isso.','e');}}else log('Nenhuma observação com demoddata na primeira página para testar download','w');
   }catch(e){setLed('net','bad');log('Network API: '+why(e),'e');}
   try{const r=await fetch('data/index.json',{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();setLed('repo','ok');log('Repositório: data/index.json OK, atualizado em '+(j.updated||'?'),'g');}catch(e){setLed('repo','bad');log('Repositório: sem data/index.json ('+e.message+'). Normal antes do primeiro run do workflow.','w');}}
@@ -702,8 +706,8 @@ function init(){
   setInterval(()=>{$('clock').textContent=new Date().toISOString().slice(0,19).replace('T',' ')+' UTC';},1000);
   let rz;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(renderCharts,150);});
   renderAll();setAuto();log('spacelab-dashboard pronto. '+LAYOUTS.length+' layouts SpaceLab embarcados: '+LAYOUTS.map(l=>l.name).join(', '));
-  loadCatalog(false);S.sats.forEach(s=>loadTx(s));
-  if(S.cfg.repo)(async()=>{let n=0;for(const s of S.sats){const k=await fetchRepo(s,true);if(k){n+=k;if(S.cfg.autoforce&&!s.layout&&s.decoder==='auto')await forceSat(s,true);else await decodeSat(s);}}if(n)renderAll();})();
+  S.sats.forEach(s=>loadTx(s));
+  (async()=>{await loadCatalog(false);if(!S.cfg.repo)return;let n=0;for(const s of S.sats){const k=await fetchRepo(s,true);if(k){n+=k;if(S.cfg.autoforce&&!s.layout&&s.decoder==='auto')await forceSat(s,true);else await decodeSat(s);}}if(n)renderAll();})();
 }
 init();
 
