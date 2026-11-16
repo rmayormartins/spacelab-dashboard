@@ -452,8 +452,9 @@ async function loadCatalog(force){
     S.catalog=j.filter(s=>s.norad_cat_id).map(s=>({n:s.norad_cat_id,name:s.name,alt:s.names||'',st:s.status,dec:(s.telemetries||[]).map(t=>t.decoder).filter(Boolean)}));
     try{localStorage.setItem(LS+':cat',JSON.stringify({t:Date.now(),items:S.catalog}));}catch(e){}
     setLed('db','ok');catInfo('db.satnogs.org');syncNames();log('catálogo SatNOGS DB: '+S.catalog.length+' satélites','g');
-  }catch(e){if(c&&c.items){S.catalog=c.items;catInfo('cache antigo');}else{$('cat-info').textContent='catálogo indisponível ('+why(e)+'). Use os atalhos ou + NORAD.';}
-    setLed('db','bad');log('catálogo SatNOGS DB falhou: '+why(e),'e');}
+  }catch(e){setLed('db','bad');log('catálogo direto do SatNOGS DB falhou: '+why(e),'w');
+    try{const r=await fetch('data/catalog.json',{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();S.catalog=j.items||[];catInfo('data/catalog.json do coletor, '+(j.updated||'?'));syncNames();setLed('repo','ok');log('catálogo carregado do repositório: '+S.catalog.length+' satélites','g');}
+    catch(e2){if(c&&c.items){S.catalog=c.items;catInfo('cache antigo');}else{$('cat-info').textContent='catálogo indisponível ('+why(e)+'). Use os atalhos ou + NORAD.';}}}
 }
 function catInfo(src){const withDec=S.catalog.filter(s=>s.dec.length).length;$('cat-info').textContent='catálogo: '+S.catalog.length+' satélites, '+withDec+' com decoder cadastrado ('+src+')';}
 function syncNames(){let ch=false;for(const s of S.sats){if(!s.norad)continue;const c=S.catalog.find(x=>x.n===s.norad);if(!c)continue;if(c.name&&c.name!==s.name){s.name=c.name;ch=true;}for(const d of c.dec){const n=normDec(d);if(!s.prefer.includes(n)){s.prefer.push(n);ch=true;}}}if(ch){save();renderSats();}}
