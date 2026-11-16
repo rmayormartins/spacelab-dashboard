@@ -32,4 +32,8 @@ jobs:
           git add data
           git diff --cached --quiet && echo "sem novidades" && exit 0
           git commit -m "data: coleta SatNOGS $(date -u +%Y-%m-%dT%H:%MZ)"
-          git push
+          for i in 1 2 3; do
+            git pull --rebase && git push && exit 0
+            sleep 5
+          done
+          exit 1
