@@ -217,6 +217,44 @@ def collect_db(norad, token, budget):
     return frames
 
 
+def collect_stations(now):
+    """Grava data/stations.json (id -> nome, pais) no maximo uma vez por dia."""
+    path = os.path.join(DATA, "stations.json")
+    old = load(path, {})
+    try:
+        age = datetime.now(timezone.utc) - datetime.strptime(old["updated"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+        if old.get("stations") and age < timedelta(hours=24):
+            print(f"estacoes: cache de {old['updated']} ainda valido", flush=True)
+            return
+    except (KeyError, ValueError):
+        pass
+    rows, url, pages = [], f"{NET}/stations/?format=json", 0
+    while url and pages < 400:
+        body, headers = http(url)
+        page = json.loads(body)
+        page = page if isinstance(page, list) else page.get("results", [])
+        pages += 1
+        for s in page:
+            if s.get("id") is not None and s.get("lat") is not None and s.get("lng") is not None:
+                rows.append((s["id"], s.get("name") or "", float(s["lat"]), float(s["lng"]), s.get("status") or ""))
+        url = next_link(headers)
+        if url:
+            time.sleep(0.3)
+    if not rows:
+        raise RuntimeError("lista de estacoes vazia")
+    codes = [""] * len(rows)
+    try:
+        import reverse_geocoder  # pacote opcional, instalado pelo workflow
+        found = reverse_geocoder.search([(r[2], r[3]) for r in rows], mode=1, verbose=False)
+        codes = [f.get("cc", "") for f in found]
+    except Exception as e:
+        note("warning", f"pais das estacoes indisponivel: {explain(e)}")
+    out = {str(r[0]): {"n": r[1], "cc": c, "st": r[4]} for r, c in zip(rows, codes)}
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump({"updated": now, "stations": out}, f, separators=(",", ":"), ensure_ascii=False)
+    print(f"estacoes: {len(out)} em {pages} paginas, {len(set(codes) - {''})} paises", flush=True)
+
+
 def main():
     cfg = load(os.path.join(ROOT, "satellites.json"), None)
     if not cfg:
@@ -305,6 +343,10 @@ def main():
         print(f"catalogo: {len(items)} satelites", flush=True)
     except Exception as e:
         note("warning", f"catalogo do SatNOGS DB falhou: {explain(e)}")
+    try:
+        collect_stations(now)
+    except Exception as e:
+        note("warning", f"lista de estacoes falhou: {explain(e)}")
     old_index = load(os.path.join(DATA, "index.json"), {})
     if old_index.get("satellites") != index:
         with open(os.path.join(DATA, "index.json"), "w", encoding="utf-8") as f:
