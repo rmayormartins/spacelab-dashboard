@@ -1,4 +1,5 @@
 {
+  "proxy": "",
   "station": null,
   "days": 14,
   "max_frames": 300,
@@ -15,7 +16,8 @@
     },
     {
       "norad": 44885,
-      "name": "FloripaSat-1", "days": 0
+      "name": "FloripaSat-1",
+      "days": 0
     }
   ]
 }

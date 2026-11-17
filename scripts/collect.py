@@ -286,6 +286,18 @@ def main():
                   "st": s.get("status") or "",
                   "dec": [t["decoder"] for t in (s.get("telemetries") or []) if t.get("decoder")]}
                  for s in json.loads(body) if s.get("norad_cat_id")]
+        try:  # transmissores ativos por satelite, para o filtro "ativos" do painel
+            tbody, _ = http(f"{DB}/transmitters/?format=json&alive=true&status=active", timeout=120)
+            count = {}
+            for t in json.loads(tbody):
+                if t.get("alive") and t.get("status", "active") == "active" and t.get("downlink_low"):
+                    count[t.get("norad_cat_id")] = count.get(t.get("norad_cat_id"), 0) + 1
+            if count:
+                for it in items:
+                    it["tx"] = count.get(it["n"], 0)
+            print(f"transmissores ativos: {sum(count.values())} em {len(count)} satelites", flush=True)
+        except Exception as e:
+            note("warning", f"lista de transmissores falhou: {explain(e)}")
         cat_path = os.path.join(DATA, "catalog.json")
         if items and load(cat_path, {}).get("items") != items:
             with open(cat_path, "w", encoding="utf-8") as f:

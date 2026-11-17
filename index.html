@@ -123,7 +123,7 @@ footer{margin-top:40px;border-top:1px solid var(--ln);padding-top:12px;color:var
 <h2>SATELITES(1) <small>quem vamos escutar</small></h2>
 <div class="grid2">
   <div class="pn">
-    <div class="row"><input type="text" id="q" placeholder="buscar no catálogo SatNOGS: nome ou NORAD" style="flex:1"><button class="btn" id="btn-add-norad" title="Adicionar pelo número mesmo sem catálogo">+ NORAD</button></div>
+    <div class="row"><input type="text" id="q" placeholder="buscar no catálogo SatNOGS: nome ou NORAD" style="flex:1"><select id="flt" title="Filtro de status do catálogo"><option value="ativos">ativos (em órbita com transmissor)</option><option value="orbita">em órbita</option><option value="decoder">com decoder oficial</option><option value="coletor">no coletor</option><option value="todos">todos</option></select><button class="btn" id="btn-add-norad" title="Adicionar pelo número mesmo sem catálogo">+ NORAD</button></div>
     <div class="res" id="res" style="display:none"></div>
     <div class="dim" style="margin-top:8px" id="cat-info">catálogo: carregando...</div>
     <div style="margin-top:8px"><span class="dim">atalhos:</span> <span class="chips" id="presets" style="display:inline-flex"></span></div>
@@ -422,7 +422,8 @@ const PRESETS=[
   {name:'ISS',norad:25544,prefer:['iss']}];
 const LAYRX=[[/golds/i,'golds-ufsc'],[/floripa.?sat.?-?2/i,'floripasat-2a'],[/floripa.?sat/i,'floripasat-1'],[/catarina.?-?a1/i,'catarina-a1'],[/catarina.?-?a2/i,'catarina-a2'],[/catarina.?-?a3/i,'catarina-a3']];
 const RANGES=[['6h',6],['24h',24],['7d',168],['30d',720],['tudo',0]];
-const S={sats:[],active:null,range:0,sel:null,catalog:[],cfg:{station:'',max:300,allstatus:false,auto:false,autoforce:true,token:'',proxy:'',repo:true,net:true,db:false}};
+const DEFAULT_PROXY='';   // URL do Worker; tambem pode vir de satellites.json (campo "proxy")
+const S={sats:[],active:null,range:0,sel:null,catalog:[],prefs:{},collected:new Set(),siteProxy:'',flt:'ativos',cfg:{station:'',max:300,allstatus:false,auto:false,autoforce:true,token:'',proxy:'',repo:true,net:true,db:false}};
 const PY={ready:false,p:null,py:null,names:[],ver:''};
 
 // ---------- utilidades ----------
@@ -433,39 +434,45 @@ const normDec=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
 function fmt(v){if(typeof v!=='number')return String(v);if(Number.isInteger(v))return Math.abs(v)>=1e9?v.toExponential(3):String(v);const a=Math.abs(v);if(a>=1e6||(a>0&&a<1e-3))return v.toExponential(3);return String(+v.toPrecision(5));}
 const utc=t=>new Date(t).toISOString().replace('T',' ').slice(0,19);
 function ago(t){const s=(Date.now()-t)/1000;if(s<0)return'agora';if(s<90)return Math.round(s)+' s';if(s<5400)return Math.round(s/60)+' min';if(s<129600)return Math.round(s/3600)+' h';return Math.round(s/86400)+' d';}
-function save(){try{localStorage.setItem(LS,JSON.stringify({cfg:S.cfg,active:S.active,range:S.range,sats:S.sats.map(s=>({key:s.key,name:s.name,norad:s.norad,layout:s.layout,decoder:s.decoder,prefer:s.prefer,custom:s.custom,pins:s.pins}))}));}catch(e){}}
+function save(){for(const s of S.sats)S.prefs[s.key]={layout:s.layout,decoder:s.decoder,custom:s.custom,pins:s.pins};try{localStorage.setItem(LS,JSON.stringify({cfg:S.cfg,range:S.range,flt:S.flt,prefs:S.prefs}));}catch(e){}}
 function activeSat(){return S.sats.find(s=>s.key===S.active)||S.sats[0]||null;}
 function layoutOf(sat){return sat.layout?LAYOUTS.find(l=>l.id===sat.layout):null;}
 function download(name,text,mime){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:mime}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);}
 
 // ---------- rede ----------
-async function xfetch(url,opt){try{return await fetch(url,opt);}catch(e){const p=(S.cfg.proxy||'').trim();if(!p||!/^https?:/.test(url))throw e;const u=p.includes('{url}')?p.replace('{url}',encodeURIComponent(url)):p+encodeURIComponent(url);return await fetch(u,opt);}}
-async function jget(url,opt){const r=await xfetch(url,opt);if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}
+const SATHOST=/^https:\/\/([a-z0-9-]+\.)*(satnogs\.org|fastly\.net|archive\.org)\//;
+function proxyBase(){let p=(S.cfg.proxy||'').trim()||S.siteProxy||DEFAULT_PROXY;if(!p)return'';if(p.includes('{url}')||/[?&]url=$/.test(p))return p;return p.replace(/\/+$/,'')+'/?url=';}
+async function xfetch(url,opt){const p=proxyBase();if(p&&SATHOST.test(url)){const e=encodeURIComponent(url);return fetch(p.includes('{url}')?p.replace('{url}',e):p+e,opt);}return fetch(url,opt);}
+async function jget(url,opt){const r=await xfetch(url,opt);if(!r.ok){let t='';try{t=(await r.text()).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,140);}catch(e){}throw new Error('HTTP '+r.status+(t?': '+t:''));}return r.json();}
 const why=e=>e instanceof TypeError?'bloqueado pelo navegador (CORS) ou sem rede':e.message;
 
 // ---------- catalogo ----------
 async function loadCatalog(force){
+  try{const r=await fetch('data/catalog.json',{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();if(!(j.items||[]).length)throw new Error('vazio');
+    S.catalog=j.items;catInfo('coletor, '+(j.updated||'?'));syncNames();setLed('repo','ok');log('catálogo carregado do repositório: '+S.catalog.length+' satélites','g');if(!force)return;}
+  catch(e){if(force)log('sem data/catalog.json no repositório ('+e.message+')','w');}
   let c=null;try{c=JSON.parse(localStorage.getItem(LS+':cat'));}catch(e){}
-  if(c&&c.items&&!force&&Date.now()-c.t<864e5){S.catalog=c.items;setLed('db','ok');catInfo('cache local');syncNames();return;}
+  if(!S.catalog.length&&c&&c.items&&!force&&Date.now()-c.t<864e5){S.catalog=c.items;catInfo('cache local');syncNames();return;}
+  if(S.catalog.length&&!force)return;
   setLed('db','wait');
-  try{const j=await jget(API.db+'/satellites/?format=json');
-    S.catalog=j.filter(s=>s.norad_cat_id).map(s=>({n:s.norad_cat_id,name:s.name,alt:s.names||'',st:s.status,dec:(s.telemetries||[]).map(t=>t.decoder).filter(Boolean)}));
-    try{localStorage.setItem(LS+':cat',JSON.stringify({t:Date.now(),items:S.catalog}));}catch(e){}
-    setLed('db','ok');catInfo('db.satnogs.org');syncNames();log('catálogo SatNOGS DB: '+S.catalog.length+' satélites','g');
-  }catch(e){setLed('db','bad');log('catálogo direto do SatNOGS DB falhou: '+why(e),'w');
-    try{const r=await fetch('data/catalog.json',{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();S.catalog=j.items||[];catInfo('data/catalog.json do coletor, '+(j.updated||'?'));syncNames();setLed('repo','ok');log('catálogo carregado do repositório: '+S.catalog.length+' satélites','g');}
-    catch(e2){if(c&&c.items){S.catalog=c.items;catInfo('cache antigo');}else{$('cat-info').textContent='catálogo indisponível ('+why(e)+'). Use os atalhos ou + NORAD.';}}}
+  try{const j=await jget(API.db+'/satellites/?format=json');const live=j.filter(s=>s.norad_cat_id).map(s=>({n:s.norad_cat_id,name:s.name,alt:s.names||'',st:s.status,dec:(s.telemetries||[]).map(t=>t.decoder).filter(Boolean)}));
+    setLed('db','ok');log('SatNOGS DB: OK, '+live.length+' satélites'+(proxyBase()?' (via proxy)':''),'g');
+    if(!S.catalog.length){S.catalog=live;try{localStorage.setItem(LS+':cat',JSON.stringify({t:Date.now(),items:live}));}catch(e){}catInfo('db.satnogs.org');syncNames();}
+  }catch(e){setLed('db','bad');log('SatNOGS DB falhou: '+why(e),'e');if(!S.catalog.length){if(c&&c.items){S.catalog=c.items;catInfo('cache antigo');}else $('cat-info').textContent='catálogo indisponível ('+why(e)+'). Use os atalhos ou + NORAD.';}}
 }
-function catInfo(src){const withDec=S.catalog.filter(s=>s.dec.length).length;$('cat-info').textContent='catálogo: '+S.catalog.length+' satélites, '+withDec+' com decoder cadastrado ('+src+')';}
+const inOrbit=s=>s.st==='in orbit'||s.st==='alive';
+const FLT={ativos:s=>inOrbit(s)&&(s.tx===undefined||s.tx>0),orbita:inOrbit,decoder:s=>s.dec.length>0,coletor:s=>S.collected.has(s.n),todos:()=>true};
+function catInfo(src){const hasTx=S.catalog.some(s=>s.tx!==undefined);$('cat-info').textContent='catálogo: '+S.catalog.length+' satélites, '+S.catalog.filter(inOrbit).length+' em órbita'+(hasTx?', '+S.catalog.filter(FLT.ativos).length+' com transmissor ativo':'')+', '+S.catalog.filter(s=>s.dec.length).length+' com decoder ('+src+')';}
 function syncNames(){let ch=false;for(const s of S.sats){if(!s.norad)continue;const c=S.catalog.find(x=>x.n===s.norad);if(!c)continue;if(c.name&&c.name!==s.name){s.name=c.name;ch=true;if(!s.layout){const m=LAYRX.find(([rx])=>rx.test(c.name));if(m){s.layout=m[1];ch=true;}}}for(const d of c.dec){const n=normDec(d);if(!s.prefer.includes(n)){s.prefer.push(n);ch=true;}}}if(ch){save();renderSats();}}
-function search(){const q=$('q').value.trim().toLowerCase(),box=$('res');if(q.length<2){box.style.display='none';return;}
-  const hit=S.catalog.filter(s=>String(s.n).includes(q)||s.name.toLowerCase().includes(q)||s.alt.toLowerCase().includes(q)).sort((a,b)=>(b.st==='alive')-(a.st==='alive')||(b.dec.length>0)-(a.dec.length>0)).slice(0,40);
-  box.style.display='block';box.innerHTML=hit.length?hit.map(s=>'<div data-n="'+s.n+'"><span class="n">'+s.n+'</span><span>'+esc(s.name)+'</span><span class="dim">'+esc(s.st||'')+'</span><span class="d">'+esc(s.dec.join(', '))+'</span></div>').join(''):'<div class="dim">nada encontrado. Tente + NORAD.</div>';}
+function search(show){const q=$('q').value.trim().toLowerCase(),box=$('res'),f=FLT[S.flt]||FLT.todos;if(!q&&!show){box.style.display='none';return;}
+  const all=S.catalog.filter(s=>f(s)&&(!q||String(s.n).includes(q)||s.name.toLowerCase().includes(q)||s.alt.toLowerCase().includes(q)));
+  const hit=all.sort((a,b)=>S.collected.has(b.n)-S.collected.has(a.n)||(b.dec.length>0)-(a.dec.length>0)||(b.tx||0)-(a.tx||0)||a.name.localeCompare(b.name)).slice(0,60);
+  box.style.display='block';box.innerHTML='<div class="dim" style="cursor:default">'+all.length+' satélites neste filtro'+(all.length>hit.length?', mostrando '+hit.length+'. Digite para refinar.':'')+'</div>'+hit.map(s=>'<div data-n="'+s.n+'"><span class="n">'+s.n+'</span><span>'+esc(s.name)+'</span><span class="dim">'+esc(s.st||'')+(s.tx!==undefined?' · '+s.tx+' tx':'')+'</span><span class="d">'+(S.collected.has(s.n)?'<span class="warn">coletor</span> ':'')+esc(s.dec.join(', '))+'</span></div>').join('');}
 
 // ---------- satelites ----------
-function mkSat(o){const lay=o.layout!==undefined?o.layout:((LAYRX.find(([rx])=>rx.test(o.name||''))||[])[1]||null);
+function mkSat(o){const k0=o.key||(o.norad?'n'+o.norad:'x-'+slug(o.name)),pf=S.prefs[k0];if(pf)o=Object.assign({},o,{layout:pf.layout,decoder:pf.decoder,custom:pf.custom,pins:pf.pins});const lay=o.layout!==undefined?o.layout:((LAYRX.find(([rx])=>rx.test(o.name||''))||[])[1]||null);
   return{key:o.key||(o.norad?'n'+o.norad:'x-'+slug(o.name)),name:o.name||('NORAD '+o.norad),norad:o.norad||null,layout:lay,decoder:o.decoder||'auto',prefer:(o.prefer||[]).map(normDec),custom:o.custom||[],pins:o.pins||null,frames:[],keys:new Set(),auto:null,rank:null,tx:null,busy:false};}
-function addSat(o){const key=o.key||(o.norad?'n'+o.norad:'x-'+slug(o.name));let s=S.sats.find(x=>x.key===key);if(!s){s=mkSat(o);S.sats.push(s);log('satélite adicionado: '+s.name+(s.norad?' ('+s.norad+')':''));}S.active=s.key;S.sel=null;save();renderAll();loadTx(s);return s;}
+function addSat(o){const key=o.key||(o.norad?'n'+o.norad:'x-'+slug(o.name));let s=S.sats.find(x=>x.key===key);if(!s){s=mkSat(o);S.sats.push(s);log('satélite adicionado: '+s.name+(s.norad?' ('+s.norad+')':''));}S.active=s.key;S.sel=null;save();renderAll();loadTx(s);if(!s.frames.length&&!o.noFetch)fetchSat(s).then(renderAll);return s;}
 function removeSat(key){S.sats=S.sats.filter(s=>s.key!==key);if(S.active===key)S.active=S.sats[0]?S.sats[0].key:null;S.sel=null;save();renderAll();}
 async function loadTx(sat){if(!sat.norad||sat.tx)return;try{const j=await jget(API.db+'/transmitters/?format=json&satellite__norad_cat_id='+sat.norad);sat.tx=j.filter(t=>t.downlink_low&&(t.norad_cat_id==null||t.norad_cat_id===sat.norad)).map(t=>({d:t.description,f:t.downlink_low,m:t.mode,b:t.baud,a:t.alive}));if(sat.key===S.active)renderSatCfg();}catch(e){sat.tx=null;}}
 
@@ -499,12 +506,12 @@ async function fetchDb(sat,budget){if(!sat.norad)return 0;const tok=(S.cfg.token
     n=addFrames(sat,got);log(sat.name+': SatNOGS DB, '+n+' quadros novos','g');setLed('db','ok');}catch(e){log(sat.name+': telemetria do DB falhou: '+why(e)+(/401|403/.test(e.message)?' (token inválido?)':''),'e');}
   return n;}
 let fetching=false;
-async function fetchAll(){if(fetching)return;fetching=true;$('btn-fetch').disabled=true;
-  try{for(const sat of S.sats){sat.busy=true;let n=0;const budget=Math.max(10,+S.cfg.max||300);
-      if(S.cfg.repo)n+=await fetchRepo(sat);if(S.cfg.net)n+=await fetchNetwork(sat,budget);if(S.cfg.db)n+=await fetchDb(sat,budget);
-      if(sat.frames.length){if(S.cfg.autoforce&&!sat.layout&&sat.decoder==='auto'&&(n||!sat.auto))await forceSat(sat,true);else await decodeSat(sat);}
-      sat.busy=false;log(sat.name+': '+sat.frames.length+' quadros no total, '+n+' novos',n?'g':'');renderAll();}}
-  finally{fetching=false;$('btn-fetch').disabled=false;}}
+async function fetchSat(sat){if(sat.busy)return;sat.busy=true;let n=0;const budget=Math.max(10,+S.cfg.max||300);
+  try{if(S.cfg.repo)n+=await fetchRepo(sat,!S.collected.has(sat.norad));if(S.cfg.net)n+=await fetchNetwork(sat,budget);if(S.cfg.db)n+=await fetchDb(sat,budget);
+    if(sat.frames.length){if(S.cfg.autoforce&&!sat.layout&&sat.decoder==='auto'&&(n||!sat.auto))await forceSat(sat,true);else await decodeSat(sat);}
+    log(sat.name+': '+sat.frames.length+' quadros no total, '+n+' novos',n?'g':'');}finally{sat.busy=false;}}
+async function fetchAll(){if(fetching)return;if(!S.sats.length){log('selecione pelo menos um satélite','w');return;}fetching=true;$('btn-fetch').disabled=true;
+  try{for(const sat of S.sats){await fetchSat(sat);renderAll();}}finally{fetching=false;$('btn-fetch').disabled=false;}}
 
 // ---------- motor oficial (Pyodide + satnogs-decoders) ----------
 function loadPy(){if(PY.p)return PY.p;setLed('py','wait');
@@ -671,13 +678,13 @@ function bindCfg(id,key,type){const el=$(id);if(type==='c')el.checked=!!S.cfg[ke
 let autoTimer=null;function setAuto(){clearInterval(autoTimer);if(S.cfg.auto)autoTimer=setInterval(fetchAll,300e3);}
 function init(){
   let st=null;try{st=JSON.parse(localStorage.getItem(LS));}catch(e){}
-  if(st){Object.assign(S.cfg,st.cfg||{});S.range=st.range||0;S.sats=(st.sats||[]).map(mkSat);S.active=st.active;}
+  if(st){Object.assign(S.cfg,st.cfg||{});S.range=st.range||0;S.flt=FLT[st.flt]?st.flt:'ativos';S.prefs=st.prefs||{};}
   const qs=new URLSearchParams(location.search);if(qs.get('station'))S.cfg.station=qs.get('station');
   if(qs.get('sats')){for(const n of qs.get('sats').split(',')){const v=parseInt(n,10);if(v&&!S.sats.find(s=>s.norad===v))S.sats.push(mkSat({norad:v}));}}
-  if(!S.sats.length){S.sats=[PRESETS[0],PRESETS[1],PRESETS[2]].map(mkSat);S.active=S.sats[2].key;}
-  if(!activeSat())S.active=S.sats[0].key;
+  if(S.sats.length)S.active=S.sats[0].key;
   [['src-repo','repo','c'],['src-net','net','c'],['src-db','db','c'],['cfg-station','station'],['cfg-max','max'],['cfg-allstatus','allstatus','c'],['cfg-auto','auto','c'],['cfg-autoforce','autoforce','c'],['cfg-token','token'],['cfg-proxy','proxy']].forEach(a=>bindCfg(a[0],a[1],a[2]));
-  $('q').addEventListener('input',search);
+  $('q').addEventListener('input',()=>search(false));$('q').addEventListener('focus',()=>search(true));
+  $('flt').value=S.flt;$('flt').addEventListener('change',()=>{S.flt=$('flt').value;save();search(true);});
   $('res').addEventListener('click',e=>{const d=e.target.closest('[data-n]');if(!d)return;const c=S.catalog.find(x=>x.n===+d.dataset.n);if(c)addSat({name:c.name,norad:c.n,prefer:c.dec});$('res').style.display='none';$('q').value='';});
   $('btn-add-norad').onclick=()=>{const v=parseInt($('q').value,10);if(!v){log('digite o número NORAD no campo de busca e clique em + NORAD','w');return;}const c=S.catalog.find(x=>x.n===v);addSat({name:c?c.name:'NORAD '+v,norad:v,prefer:c?c.dec:[]});$('q').value='';$('res').style.display='none';};
   $('presets').addEventListener('click',e=>{const d=e.target.closest('[data-p]');if(d)addSat(PRESETS[+d.dataset.p]);});
@@ -707,7 +714,10 @@ function init(){
   let rz;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(renderCharts,150);});
   renderAll();setAuto();log('spacelab-dashboard pronto. '+LAYOUTS.length+' layouts SpaceLab embarcados: '+LAYOUTS.map(l=>l.name).join(', '));
   S.sats.forEach(s=>loadTx(s));
-  (async()=>{await loadCatalog(false);if(!S.cfg.repo)return;let n=0;for(const s of S.sats){const k=await fetchRepo(s,true);if(k){n+=k;if(S.cfg.autoforce&&!s.layout&&s.decoder==='auto')await forceSat(s,true);else await decodeSat(s);}}if(n)renderAll();})();
+  (async()=>{
+    try{const r=await fetch('satellites.json',{cache:'no-store'});if(r.ok){const j=await r.json();S.siteProxy=String(j.proxy||'').trim();(j.satellites||[]).forEach(x=>x.norad&&S.collected.add(x.norad));if(S.siteProxy)log('proxy do site ativo: '+S.siteProxy.replace(/^https:\/\//,'').split('/')[0]);}}catch(e){}
+    $('cfg-proxy').placeholder=proxyBase()||'https://seu-worker.workers.dev/?url=';
+    await loadCatalog(false);for(const s of S.sats){await fetchSat(s);}if(S.sats.length)renderAll();})();
 }
 init();
 
