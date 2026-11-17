@@ -1,0 +1,23 @@
+name: amostras-temp
+on:
+  push:
+    branches: [claude/amostras-audio]
+    paths: [amostras-temp/**, .github/workflows/amostras-temp.yml]
+permissions:
+  contents: write
+jobs:
+  baixar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python amostras-temp/baixar.py
+      - run: |
+          git config user.name "spacelab-dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add amostras
+          git commit -m "amostras temporarias" || exit 0
+          git push
