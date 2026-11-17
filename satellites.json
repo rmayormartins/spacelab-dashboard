@@ -1,5 +1,5 @@
 {
-  "proxy": "",
+  "proxy": "https://satnogs-proxy.rmayormartins.workers.dev/",
   "station": null,
   "days": 14,
   "max_frames": 300,
