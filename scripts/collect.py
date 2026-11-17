@@ -146,16 +146,42 @@ def first_page(norad, cfg):
     raise RuntimeError("a API ignorou os filtros de satelite testados: " + ", ".join(ignored))
 
 
+IMG_EXT = re.compile(r"\.(png|jpe?g|gif|webp)(\?|$)", re.I)
+
+
+def product(o):
+    """Produtos de uma observacao (imagens da estacao, waterfall, audio) para a secao DECODE_ESPECIAL."""
+    img, nfr = [], 0
+    for d in o.get("demoddata") or []:
+        u = d.get("payload_demod")
+        if not u:
+            continue
+        if IMG_EXT.search(u):
+            img.append(u)
+        else:
+            nfr += 1
+    p = {"id": o.get("id"), "t": o.get("start"), "gs": o.get("ground_station"), "station": o.get("station_name") or "",
+         "mode": o.get("transmitter_mode") or "", "desc": o.get("transmitter_description") or "",
+         "freq": o.get("observation_frequency") or o.get("transmitter_downlink_low"),
+         "wf": o.get("waterfall"), "audio": o.get("payload"), "arch": o.get("archive_url"), "img": img[:6], "nfr": nfr}
+    return p if p["id"] and (p["wf"] or p["audio"] or p["img"]) else None
+
+
 def collect_network(norad, cfg, done_obs):
-    """Lista observacoes do satelite e baixa os quadros das que ainda nao foram vistas."""
-    frames, pages, seen = [], 0, []
+    """Lista observacoes do satelite, guarda os produtos e baixa os quadros das que ainda nao foram vistas."""
+    frames, pages, seen, prods = [], 0, [], []
     budget = int(cfg.get("max_frames", 400))
     page, headers = first_page(norad, cfg)
     while page and len(frames) < budget:
         pages += 1
         for obs in page:
             oid = obs.get("id")
-            if obs.get("norad_cat_id") != norad or oid in done_obs:
+            if obs.get("norad_cat_id") != norad:
+                continue
+            prod = product(obs)
+            if prod:
+                prods.append(prod)
+            if oid in done_obs:
                 continue
             ok = True
             for item in obs.get("demoddata") or []:
@@ -190,7 +216,7 @@ def collect_network(norad, cfg, done_obs):
         body, headers = http(url)
         page = json.loads(body)
         page = page if isinstance(page, list) else page.get("results", [])
-    return frames, seen
+    return frames, seen, prods
 
 
 def collect_db(norad, token, budget):
@@ -281,11 +307,11 @@ def main():
         frames = old.get("frames", [])
         done = set(old.get("obs_done", []))
         print(f"{name} ({norad}): {len(frames)} quadros em cache", flush=True)
-        new, seen = [], []
+        new, seen, prods = [], [], []
         try:
             scfg = {**cfg, **{k: v for k, v in sat.items() if k in ("days", "station", "max_frames", "max_pages", "only_good")}}
-            new, seen = collect_network(norad, scfg, done)
-            print(f"  network: {len(new)} quadros novos em {len(seen)} observacoes", flush=True)
+            new, seen, prods = collect_network(norad, scfg, done)
+            print(f"  network: {len(new)} quadros novos em {len(seen)} observacoes, {len(prods)} com imagem, waterfall ou audio", flush=True)
         except Exception as e:
             errors += 1
             reasons.append(f"{name}: Network {explain(e)}")
@@ -303,7 +329,11 @@ def main():
             if f.get("hex") and f.get("t"):
                 merged[(f["t"], f["hex"], f.get("gs"))] = f
         frames = sorted(merged.values(), key=lambda f: f["t"])[-int(cfg.get("max_frames", 400)):]
-        changed = len(frames) != len(old.get("frames", [])) or bool(new)
+        obs = {p["id"]: p for p in old.get("obs", []) if p.get("id")}
+        for p in prods:
+            obs[p["id"]] = p
+        obs_list = sorted(obs.values(), key=lambda p: p.get("t") or "", reverse=True)[:int(cfg.get("max_obs", 60))]
+        changed = len(frames) != len(old.get("frames", [])) or bool(new) or obs_list != old.get("obs", [])
         out = {
             "schema": 2,
             "norad": norad,
@@ -311,11 +341,12 @@ def main():
             "updated": now if changed else old.get("updated", now),
             "frames": frames,
             "obs_done": sorted(done | set(seen))[-3000:],
+            "obs": obs_list,
         }
         if changed or not os.path.exists(path):
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(out, f, separators=(",", ":"))
-        index.append({"norad": norad, "name": name, "frames": len(frames),
+        index.append({"norad": norad, "name": name, "frames": len(frames), "obs": len(obs_list),
                       "last": frames[-1]["t"] if frames else None, "updated": out["updated"]})
     # catalogo para a busca do dashboard quando o navegador bloqueia o SatNOGS DB
     try:
