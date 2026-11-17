@@ -1,0 +1,268 @@
+{
+ "probe": {
+  "keys": [
+   "archive_url",
+   "archived",
+   "center_frequency",
+   "client_metadata",
+   "client_version",
+   "demoddata",
+   "end",
+   "ground_station",
+   "id",
+   "max_altitude",
+   "norad_cat_id",
+   "observation_frequency",
+   "observer",
+   "payload",
+   "rise_azimuth",
+   "sat_id",
+   "set_azimuth",
+   "start",
+   "station_alt",
+   "station_lat",
+   "station_lng",
+   "station_name",
+   "status",
+   "status_certainty",
+   "tle0",
+   "tle1",
+   "tle2",
+   "tle_source",
+   "transmitter",
+   "transmitter_baud",
+   "transmitter_description",
+   "transmitter_downlink_drift",
+   "transmitter_downlink_high",
+   "transmitter_downlink_low",
+   "transmitter_invert",
+   "transmitter_mode",
+   "transmitter_parameters",
+   "transmitter_status",
+   "transmitter_type",
+   "transmitter_unconfirmed",
+   "transmitter_updated",
+   "transmitter_uplink_drift",
+   "transmitter_uplink_high",
+   "transmitter_uplink_low",
+   "transmitter_uuid",
+   "vetted_datetime",
+   "vetted_user",
+   "waterfall",
+   "waterfall_status",
+   "waterfall_status_datetime",
+   "waterfall_status_user"
+  ],
+  "exemplo": {
+   "id": 15469038,
+   "start": "2026-11-17T06:58:23Z",
+   "end": "2026-11-17T07:01:27Z",
+   "ground_station": 754,
+   "transmitter": "eozSf5mKyzNxoascs8V4bV",
+   "norad_cat_id": 25544,
+   "payload": "https://network-satnogs.freetls.fastly.net/media/data_obs/2026/11/17/6/15469038/satnogs_15469038_2026-11-17T06-58-23.ogg",
+   "waterfall": "https://s3.eu-central-1.wasabisys.com/satnogs-network/data_obs/2026/11/17/6/15469038/waterfall_15469038_2026-11-17T06-58-23.png",
+   "demoddata": [],
+   "station_name": "W6MSU UHF",
+   "station_lat": 38.054,
+   "station_lng": -121.361,
+   "station_alt": 10,
+   "archived": false,
+   "vetted_user": 291,
+   "vetted_datetime": "2026-11-17T08:00:31.096779Z",
+   "archive_url": null,
+   "client_version": "2.1.4",
+   "client_metadata": "{\"radio\": {\"name\": \"gr-satnogs\", \"version\": null, \"parameters\": {\"mode\": \"FM\", \"soapy-rx-device\": \"driver=rtlsdr\", \"samp-rate-rx\": \"2.048e+06\", \"rx-freq\": \"437800000\", \"file-path\": \"/tmp/.satnogs/data/receiving_satnogs_15469038_2026-11-17T06-58-23.out\", \"waterfall-file-path\": \"/tmp/.satnogs/data/receiving_waterfall_15469038_2026-11-17T06-58-23.dat\", \"decoded-data-file-path\": \"/tmp/.satnogs/data/data_15469038\", \"doppler-correction-per-sec\": null, \"lo-offset\": null, \"ppm\": null, \"rigctl-host\": \"rigctld\", \"rigctl-port\": \"4532\", \"gain-mode\": \"Overall\", \"gain\": \"8.7\", \"antenna\": \"RX\", \"dev-args\": null, \"stream-args\": null, \"tune-args\": null, \"other-settings\": null, \"dc-removal\": null, \"bb-freq\": null, \"bw\": null, \"enable-iq-dump\": \"0\", \"iq-file-path\": null, \"udp-dump-host\": null, \"udp-dump-port\": 57356}}, \"latitude\": 38.054, \"longitude\": -121.361, \"elevation\": 10.0, \"frequency\": 437800000}",
+   "status": "good",
+   "status_certainty": 100,
+   "waterfall_status": "with-signal",
+   "waterfall_status_user": 291,
+   "waterfall_status_datetime": "2026-11-17T08:00:31.096779Z",
+   "rise_azimuth": 317.0,
+   "set_azimuth": 53.0,
+   "max_altitude": 61.0,
+   "transmitter_uuid": "eozSf5mKyzNxoascs8V4bV",
+   "transmitter_description": "Mode V/U FM - Voice Repeater CTCSS 67.0 Hz",
+   "transmitter_type": "Transceiver",
+   "transmitter_uplink_low": 145990000,
+   "transmitter_uplink_high": null,
+   "transmitter_uplink_drift": null,
+   "transmitter_downlink_low": 437800000,
+   "transmitter_downlink_high": null,
+   "transmitter_downlink_drift": null,
+   "transmitter_mode": "FM",
+   "transmitter_invert": false,
+   "transmitter_baud": null,
+   "transmitter_updated": "2025-07-02T07:57:46.303644Z",
+   "transmitter_status": "active",
+   "tle0": "0 ISS (ZARYA)",
+   "tle1": "1 25544U 98067A   26320.88307550  .00009012  00000-0  16898-3 0  9996",
+   "tle2": "2 25544  51.6320 264.4586 0007388  33.7322 326.4135 15.49421361595425",
+   "tle_source": "Space-Track.org",
+   "center_frequency": null,
+   "observer": "W6MSU",
+   "observation_frequency": 437800000,
+   "transmitter_unconfirmed": false,
+   "sat_id": "XSKZ-5603-1870-9019-3066",
+   "transmitter_parameters": null
+  }
+ },
+ "arquivos": [
+  {
+   "tag": "iss_sstv",
+   "id": 15290852,
+   "start": "2026-10-26T15:58:27Z",
+   "end": "2026-10-26T16:09:16Z",
+   "ground_station": 5049,
+   "station_name": "JF6FYI Nishikazu_KitaKyushu_3-ele Yagi (UHF)",
+   "norad_cat_id": 25544,
+   "transmitter_mode": "SSTV",
+   "transmitter_description": "Mode U - SSTV - Robot-36",
+   "transmitter_downlink_low": 437550000,
+   "observation_frequency": 437550000,
+   "payload": "https://network-satnogs.freetls.fastly.net/media/data_obs/2026/10/26/15/15290852/satnogs_15290852_2026-10-26T15-58-27.ogg",
+   "waterfall": "https://s3.eu-central-1.wasabisys.com/satnogs-network/data_obs/2026/10/26/15/15290852/waterfall_15290852_2026-10-26T15-58-27.png",
+   "archived": false,
+   "archive_url": null,
+   "status": "good",
+   "vetted_status": null,
+   "demoddata": [
+    {
+     "payload_demod": "https://s3.eu-central-1.wasabisys.com/satnogs-network/data_obs/2026/10/26/15/15290852/data_15290852_2026-10-26T160237.450861Z.png"
+    },
+    {
+     "payload_demod": "https://s3.eu-central-1.wasabisys.com/satnogs-network/data_obs/2026/10/26/15/15290852/data_15290852_2026-10-26T160519.807848Z.png"
+    },
+    {
+     "payload_demod": "https://s3.eu-central-1.wasabisys.com/satnogs-network/data_obs/2026/10/26/15/15290852/data_15290852_general_003_robot36.png"
+    },
+    {
+     "payload_demod": "https://s3.eu-central-1.wasabisys.com/satnogs-network/data_obs/2026/10/26/15/15290852/data_15290852_overlap_001_robot36.png"
+    },
+    {
+     "payload_demod": "https://s3.eu-central-1.wasabisys.com/satnogs-network/data_obs/2026/10/26/15/15290852/data_15290852_bandpass_001_robot36.png"
+    },
+    {
+     "payload_demod": "https://s3.eu-central-1.wasabisys.com/satnogs-network/data_obs/2026/10/26/15/15290852/data_15290852_general_001_robot36.png"
+    },
+    {
+     "payload_demod": "https://s3.eu-central-1.wasabisys.com/satnogs-network/data_obs/2026/10/26/15/15290852/data_15290852_bandpass_003_robot36.png"
+    },
+    {
+     "payload_demod": "https://s3.eu-central-1.wasabisys.com/satnogs-network/data_obs/2026/10/26/15/15290852/data_15290852_bandpass_002_robot36.png"
+    },
+    {
+     "payload_demod": "https://s3.eu-central-1.wasabisys.com/satnogs-network/data_obs/2026/10/26/15/15290852/data_15290852_general_002_robot36.png"
+    },
+    {
+     "payload_demod": "https://s3.eu-central-1.wasabisys.com/satnogs-network/data_obs/2026/10/26/15/15290852/data_15290852_overlap_004_robot36.png"
+    },
+    {
+     "payload_demod": "https://s3.eu-central-1.wasabisys.com/satnogs-network/data_obs/2026/10/26/15/15290852/data_15290852_overlap_003_robot36.png"
+    },
+    {
+     "payload_demod": "https://s3.eu-central-1.wasabisys.com/satnogs-network/data_obs/2026/10/26/15/15290852/data_15290852_overlap_002_robot36.png"
+    }
+   ],
+   "audio_file": "amostras/iss_sstv_15290852.ogg",
+   "img_files": [
+    "amostras/iss_sstv_15290852_img0.png",
+    "amostras/iss_sstv_15290852_img1.png",
+    "amostras/iss_sstv_15290852_img2.png"
+   ]
+  },
+  {
+   "tag": "iss_sstv",
+   "id": 15290895,
+   "start": "2026-10-26T15:58:27Z",
+   "end": "2026-10-26T16:03:22Z",
+   "ground_station": 4394,
+   "station_name": "JF6FYI Nishikazu_KitaKyushu_QFH (UHF)",
+   "norad_cat_id": 25544,
+   "transmitter_mode": "SSTV",
+   "transmitter_description": "Mode U - SSTV - Robot-36",
+   "transmitter_downlink_low": 437550000,
+   "observation_frequency": 437550000,
+   "payload": "https://network-satnogs.freetls.fastly.net/media/data_obs/2026/10/26/15/15290895/satnogs_15290895_2026-10-26T15-58-27.ogg",
+   "waterfall": "https://s3.eu-central-1.wasabisys.com/satnogs-network/data_obs/2026/10/26/15/15290895/waterfall_15290895_2026-10-26T15-58-27.png",
+   "archived": false,
+   "archive_url": null,
+   "status": "good",
+   "vetted_status": null,
+   "demoddata": [
+    {
+     "payload_demod": "https://s3.eu-central-1.wasabisys.com/satnogs-network/data_obs/2026/10/26/15/15290895/data_15290895_2026-10-26T160322.280316Z.png"
+    },
+    {
+     "payload_demod": "https://s3.eu-central-1.wasabisys.com/satnogs-network/data_obs/2026/10/26/15/15290895/data_15290895_bandpass_001_robot36.png"
+    },
+    {
+     "payload_demod": "https://s3.eu-central-1.wasabisys.com/satnogs-network/data_obs/2026/10/26/15/15290895/data_15290895_overlap_001_robot36.png"
+    },
+    {
+     "payload_demod": "https://s3.eu-central-1.wasabisys.com/satnogs-network/data_obs/2026/10/26/15/15290895/data_15290895_general_001_robot36.png"
+    }
+   ],
+   "audio_file": "amostras/iss_sstv_15290895.ogg",
+   "img_files": [
+    "amostras/iss_sstv_15290895_img0.png",
+    "amostras/iss_sstv_15290895_img1.png",
+    "amostras/iss_sstv_15290895_img2.png"
+   ]
+  },
+  {
+   "tag": "iss_audio",
+   "id": 15291125,
+   "start": "2026-10-27T22:59:35Z",
+   "end": "2026-10-27T23:07:34Z",
+   "ground_station": 5238,
+   "station_name": "DB0RBX",
+   "norad_cat_id": 25544,
+   "transmitter_mode": "AFSK",
+   "transmitter_description": "Mode U APRS test",
+   "transmitter_downlink_low": 437825000,
+   "observation_frequency": 437825000,
+   "payload": "https://network-satnogs.freetls.fastly.net/media/data_obs/2026/10/27/22/15291125/satnogs_15291125_2026-10-27T22-59-35.ogg",
+   "waterfall": "https://s3.eu-central-1.wasabisys.com/satnogs-network/data_obs/2026/10/27/22/15291125/waterfall_15291125_2026-10-27T22-59-35.png",
+   "archived": false,
+   "archive_url": null,
+   "status": "good",
+   "vetted_status": null,
+   "demoddata": [
+    {
+     "payload_demod": "https://s3.eu-central-1.wasabisys.com/satnogs-network/data_obs/2026/10/27/22/15291125/data_15291125_2026-10-27T23-01-26"
+    }
+   ],
+   "audio_file": "amostras/iss_audio_15291125.ogg"
+  },
+  {
+   "tag": "noaa19",
+   "id": 15347380,
+   "start": "2026-11-03T07:27:13Z",
+   "end": "2026-11-03T07:35:28Z",
+   "ground_station": 4210,
+   "station_name": "NUUGS1",
+   "norad_cat_id": 33591,
+   "transmitter_mode": "APT",
+   "transmitter_description": "APT Downlink",
+   "transmitter_downlink_low": 137100000,
+   "observation_frequency": 137100000,
+   "payload": "https://network-satnogs.freetls.fastly.net/media/data_obs/2026/11/3/7/15347380/satnogs_15347380_2026-11-03T07-27-13.ogg",
+   "waterfall": "https://s3.eu-central-1.wasabisys.com/satnogs-network/data_obs/2026/11/3/7/15347380/waterfall_15347380_2026-11-03T07-27-13.png",
+   "archived": false,
+   "archive_url": null,
+   "status": "good",
+   "vetted_status": null,
+   "demoddata": [
+    {
+     "payload_demod": "https://s3.eu-central-1.wasabisys.com/satnogs-network/data_obs/2026/11/3/7/15347380/data_15347380_2026-11-03T07-27-13.png"
+    }
+   ],
+   "audio_file": "amostras/noaa19_15347380.ogg",
+   "img_files": [
+    "amostras/noaa19_15347380_img0.png"
+   ]
+  }
+ ],
+ "notas": []
+}
