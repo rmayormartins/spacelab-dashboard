@@ -87,6 +87,28 @@ details>div{padding:4px 12px 12px}
 .fl label{color:var(--tx);cursor:pointer}
 footer{margin-top:40px;border-top:1px solid var(--ln);padding-top:12px;color:var(--dim);font-size:11.5px;display:flex;gap:8px 24px;flex-wrap:wrap}
 .spark{width:120px;height:26px;vertical-align:middle}
+.trace{margin:4px 0 8px;border:1px solid var(--ln);border-radius:4px;padding:4px 8px;background:#0b1114}
+.trace div{display:grid;grid-template-columns:14px 140px minmax(0,1fr);gap:8px;font-size:12px;padding:2px 0;border-bottom:1px dotted #17242a}
+.trace div:last-child{border-bottom:0}.trace b{font-weight:400;color:var(--dim)}
+.sub{font-size:11px;color:var(--dim);letter-spacing:.06em;text-transform:uppercase;margin:12px 0 4px}
+.h0{background:#163848}.h1{background:#3b2a4d}.h2{background:#1f4126}.h3{background:#4a3a17}.h4{background:#4a1f2c}.h5{background:#174744}
+pre.hex span[data-o]{cursor:pointer}pre.hex span[data-o]:hover{outline:1px solid var(--cy)}pre.hex .bsel{outline:1px solid var(--or)}
+.legend{display:flex;flex-wrap:wrap;gap:3px 6px;font-size:11px;margin:4px 0 2px}.legend span{padding:0 5px;border-radius:2px;color:var(--tx)}
+pre.tree{margin:0;font-size:11.5px;max-height:320px;overflow:auto;background:#05080a;border:1px solid var(--ln);padding:6px 8px;color:#a9bcc0}
+ol.steps{margin:4px 0;padding-left:22px;font-size:12px}ol.steps li{margin:2px 0}ol.steps .x{color:var(--dim);cursor:pointer;margin-left:6px}ol.steps .x:hover{color:var(--rd)}
+.kv.insp{grid-template-columns:auto 1fr auto 1fr}
+#dlog{background:#05080a;border:1px solid var(--ln);border-radius:4px;padding:6px 10px;height:260px;overflow:auto;font-size:11.5px}
+#dlog div{white-space:pre-wrap;word-break:break-word;padding:1px 0}#dlog .t{color:#4f6369}#dlog .sn{color:var(--dim)}#dlog b{font-weight:400}
+#dlog .lote{color:var(--amb)}#dlog .ok b{color:var(--gr)}#dlog .falha b,#dlog .falha{color:var(--rd)}#dlog .parc b{color:var(--cy)}#dlog .esp{color:var(--vi)}
+#dlog div[data-t]{cursor:pointer}#dlog div[data-t]:hover{background:#101b20}
+.prog{height:6px;background:var(--bg2);border:1px solid var(--ln);border-radius:3px;overflow:hidden;margin:8px 0 4px}.prog i{display:block;height:100%;width:0;background:var(--or);transition:width .2s}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}.gal img{width:100%;height:auto;border:1px solid var(--ln);border-radius:3px;background:#000;display:block}
+.wf{max-height:460px;overflow:auto;border:1px solid var(--ln);background:#000}.wf img{width:100%;height:auto;display:block}
+.res-card{border:1px solid var(--ln);border-radius:4px;padding:8px;margin-top:10px;background:var(--pn)}.res-card canvas{width:100%;height:auto;background:#000;display:block;margin-top:6px}.res-card canvas.sstv{max-width:760px}
+.hint{border-left:3px solid var(--or);padding:7px 11px;background:var(--pn);font-size:12px;margin-bottom:10px;line-height:1.55}
+.man2 details>div p,.man2 li{font-size:12.5px;line-height:1.65;max-width:1080px}.man2 pre{background:#05080a;border:1px solid var(--ln);padding:8px 10px;overflow:auto;font-size:11.5px;line-height:1.35;color:#a9bcc0}
+.man2 ul,.man2 ol{padding-left:22px}table.modes{max-width:900px;margin:8px 0}table.modes td{white-space:normal}
+.warn{color:var(--or)}
 </style>
 </head>
 <body>
@@ -117,7 +139,8 @@ footer{margin-top:40px;border-top:1px solid var(--ln);padding-top:12px;color:var
 <div class="man">
   <b>NAME</b><span>spacelab-dashboard: decodificador de telemetria e beacons de satélites da rede SatNOGS</span>
   <b>SYNOPSIS</b><span><code>spacelab-dashboard</code> [satélites] [fontes] <code>--forcar</code></span>
-  <b>DESCRIPTION</b><span>Escolha os satélites, busque os quadros demodulados e o painel tenta decodificar por três motores em cascata: <span class="tag sl">SPACELAB</span> NGHam + Reed-Solomon com os layouts do GOLDS-UFSC e FloripaSat, <span class="tag of">OFICIAL</span> todos os decoders Kaitai do satnogs-decoders rodando no navegador, e <span class="tag ax">NATIVO</span> AX.25, CSP e texto. O que sobrar vai para o laboratório de bytes.</span>
+  <b>DESCRIPTION</b><span>Escolha os satélites, busque os quadros demodulados e o painel tenta decodificar por três motores em cascata: <span class="tag sl">SPACELAB</span> NGHam + Reed-Solomon com os layouts do GOLDS-UFSC e FloripaSat, <span class="tag of">OFICIAL</span> todos os decoders Kaitai do satnogs-decoders rodando no navegador, e <span class="tag ax">NATIVO</span> AX.25, CSP e texto. Cada tentativa fica registrada no rastro do quadro e no LOG_DECODE. O que sobrar vai para o canivete suíço. Áudio vira imagem em <span class="tag cu">DECODE ESPECIAL</span>: APT dos NOAA e SSTV da ISS.</span>
+  <b>SEE ALSO</b><span>MANUAL(10), no fim da página: como cada motor funciona.</span>
 </div>
 
 <h2>SATELITES(1) <small>quem vamos escutar</small></h2>
@@ -189,10 +212,28 @@ footer{margin-top:40px;border-top:1px solid var(--ln);padding-top:12px;color:var
 <h2>QUADROS(5) <small id="fr-sub"></small></h2>
 <div class="grid2">
   <div class="pn" style="padding:0"><div class="scroll" id="frames"></div></div>
-  <div class="pn" id="detail"><span class="dim">Clique em um quadro para abrir o hexdump, as camadas detectadas e os campos.</span></div>
+  <div class="pn" id="detail"><span class="dim">Clique em um quadro para ver como ele foi decodificado, o hexdump e os campos.</span></div>
 </div>
 
-<h2>FORCA_BRUTA(6) <small>ranking de decoders e laboratório de bytes</small></h2>
+<h2>DECODE_ESPECIAL(6) <small>imagens das estações, waterfall, áudio e decodificação APT (NOAA) e SSTV (ISS) no navegador</small></h2>
+<div class="hint" id="sp-hint"></div>
+<div class="grid2">
+  <div class="pn">
+    <div class="row" style="margin-bottom:6px"><span class="dim" id="sp-sub"></span><span style="flex:1"></span><label><input type="checkbox" id="sp-img"> só com imagem</label><label><input type="checkbox" id="sp-aud"> só com áudio</label></div>
+    <div class="row" style="margin-bottom:8px"><label>observações do dia <input type="text" id="sp-until" placeholder="AAAA-MM-DD" style="width:110px"></label><button class="btn sm" id="sp-older">buscar na Network</button><span class="dim">para chegar a passagens antigas</span></div>
+    <div class="scroll" id="sp-obs" style="max-height:420px"></div>
+  </div>
+  <div class="pn">
+    <div id="sp-view"></div>
+    <div class="sub">decodificar arquivo de áudio (WAV, OGG, MP3, FLAC)</div>
+    <div class="row"><select id="sp-mode"></select><input type="file" id="sp-file" accept="audio/*,.ogg,.oga,.opus,.wav,.mp3,.flac"></div>
+    <div class="prog"><i id="sp-bar"></i></div><div class="dim" id="sp-msg">pronto. O áudio é processado no seu navegador, sem enviar para nenhum servidor.</div>
+  </div>
+</div>
+<div id="sp-res"></div>
+
+<h2>FORCA_BRUTA(7) <small>ranking de decoders, canivete suíço e laboratório de bytes</small></h2>
+<div class="hint">Força bruta: o painel roda os 169 decoders oficiais numa amostra de até 16 quadros e lista quais conseguem ler sem erro. Aceitar não prova que é o decoder certo: os "permissivos" aceitam até bytes aleatórios. Quando nada funciona, use o canivete para desembrulhar o quadro camada por camada.</div>
 <div class="grid2">
   <div class="pn"><div class="dim" style="margin-bottom:6px">ranking dos decoders oficiais na amostra do satélite ativo</div><div class="scroll" id="rank" style="max-height:300px"><span class="dim">Use "forçar decodificação".</span></div></div>
   <div class="pn">
@@ -205,19 +246,156 @@ footer{margin-top:40px;border-top:1px solid var(--ln);padding-top:12px;color:var
     <div class="scroll" id="scan" style="max-height:230px"></div>
   </div>
 </div>
+<div class="pn" id="knife" style="margin-top:12px">
+  <div class="sub" style="margin-top:0">canivete suíço: abrir o quadro camada por camada</div>
+  <div class="row"><button class="btn sm" id="kn-take">usar quadro selecionado</button><input type="text" id="kn-in" placeholder="ou cole bytes em hexadecimal" style="flex:1;min-width:200px"><button class="btn sm" id="kn-load">carregar hex</button></div>
+  <div class="dim" id="kn-src" style="margin-top:4px"></div>
+  <div class="row" style="margin-top:8px"><select id="kn-op"></select><input type="text" id="kn-arg" style="width:190px"><button class="btn sm" id="kn-add">+ adicionar à receita</button><button class="btn sm" id="kn-clear">limpar receita</button></div>
+  <div id="kn-steps" style="margin-top:6px"></div>
+  <div class="grid2" style="margin-top:4px">
+    <div><div class="sub">saída (clique num byte para inspecionar)</div><pre class="hex" id="kn-hex"></pre></div>
+    <div><div class="sub">análises automáticas</div><div id="kn-an"></div></div>
+  </div>
+  <div class="row" style="margin-top:10px"><button class="btn sm" id="kn-try">tentar todos os motores na saída</button><button class="btn sm" id="kn-apply">aplicar a receita a todos os quadros do satélite</button><button class="btn sm" id="kn-unapply">remover receita do satélite</button><span class="warn" id="kn-satrec"></span></div>
+  <div id="kn-res" style="margin-top:8px"></div>
+</div>
 
-<h2>LOG(7)</h2>
+<h2>LOG_DECODE(8) <small>o que cada motor tentou, quadro a quadro</small><span style="margin-left:auto" class="chips" id="dl-flt"></span></h2>
+<div id="dlog"></div>
+<div class="row" style="margin-top:6px"><span class="dim" id="dl-sub"></span><span style="flex:1"></span><button class="btn sm" id="dl-exp">exportar .txt</button><button class="btn sm" id="dl-clr">limpar</button></div>
+
+<h2>LOG(9) <small>sistema: rede, catálogo, coletor e motores</small></h2>
 <div id="log"></div>
 
-<details style="margin-top:22px"><summary>NOTES: como funciona, limites e licenças</summary><div>
-<p><b class="amb">Fluxo.</b> Catálogo e transmissores vêm de db.satnogs.org/api. As observações vêm de network.satnogs.org/api/observations e cada item de <code>demoddata</code> é um arquivo binário com um quadro. A telemetria do DB (<code>/api/telemetry/</code>) exige token pessoal.</p>
-<p><b class="amb">Se o navegador bloquear (CORS).</b> Os LEDs no topo mostram o que passou. A rota garantida é o coletor em GitHub Actions deste repositório, que grava <code>data/&lt;norad&gt;.json</code> e o painel lê como arquivo local.</p>
-<p><b class="amb">Motor SpaceLab.</b> Procura a sync word 5D E6 2A 7E, lê a size tag do NGHam, remove o embaralhamento CCSDS, corrige erros com Reed-Solomon e confere o CRC-16. Os campos seguem os arquivos do spacelab-decoder (GPLv3, SpaceLab/UFSC). Os campos do GOLDS-UFSC devem ser conferidos com o primeiro quadro real.</p>
-<p><b class="amb">Motor oficial.</b> Baixa o pacote satnogs-decoders (AGPLv3, Libre Space Foundation) do PyPI e roda no navegador com Pyodide. No modo automático só é aplicado o decoder cadastrado no SatNOGS DB para o satélite. O botão "forçar decodificação" testa todos e, se nenhum cadastrado servir, aplica o melhor como PALPITE: os campos têm nomes de outro satélite e precisam ser conferidos.</p>
-<p><b class="amb">Dados.</b> SatNOGS, CC BY-SA. Valores decodificados por força bruta são hipóteses até baterem com a documentação do satélite.</p>
+<h2>MANUAL(10) <small>como o decodificador funciona, do sinal ao campo</small></h2>
+<div class="man2">
+<details open><summary>visão geral: o caminho de um quadro</summary><div>
+<pre>
+ SatNOGS Network  ── observação ──>  demoddata (quadros binários e imagens da estação)
+        │                            payload (áudio .ogg) e waterfall (.png)
+        │
+   coletor (GitHub Actions, a cada 30 min) ──> data/*.json ──┐
+   proxy (Cloudflare Worker, ao vivo) ──────────────────────> painel
+                                                              │
+   receita do canivete, se o satélite tiver uma ──────────────┤
+                                                              v
+   CASCATA DE MOTORES, quadro a quadro
+     1 SPACELAB  sync 5D E6 2A 7E > size tag > CCSDS > Reed-Solomon > CRC > layout
+     2 OFICIAL   decoder Kaitai do satnogs-decoders (Python no navegador, Pyodide)
+     3 NATIVO    cabeçalho AX.25, hipótese CSP, texto ASCII
+     4 MANUAL    campos por offset definidos por você
+                                                              │
+   campos > gráficos, tabela, exportação, LOG_DECODE <────────┘
+</pre>
+<p>Cada quadro passa pelos motores nessa ordem. O primeiro que entrega campos de telemetria define o resultado (SPACELAB ou OFICIAL); NATIVO e MANUAL só aparecem quando nenhum dos dois serviu. Tudo o que foi tentado fica registrado: no bloco "como foi decodificado" do quadro (seção QUADROS) e, em ordem de tempo, no LOG_DECODE.</p>
+<p>Áudio e imagens seguem outro caminho, na seção DECODE_ESPECIAL: o painel baixa o .ogg da observação e demodula APT ou SSTV no próprio navegador.</p>
 </div></details>
 
-<footer><span>spacelab-dashboard v1.0.0</span><span>2026</span><span>ramon.mayor@ifsc.edu.br</span><span>dados: <a href="https://satnogs.org" target="_blank" rel="noopener">SatNOGS</a> (CC BY-SA)</span><span>layouts: <a href="https://github.com/spacelab-ufsc/spacelab-decoder" target="_blank" rel="noopener">spacelab-decoder</a></span></footer>
+<details><summary>fontes de dados e o proxy</summary><div>
+<p><b class="amb">SatNOGS Network</b> (<code>network.satnogs.org/api/observations</code>): lista as observações de um satélite. O filtro que funciona é <code>norad_cat_id</code>; o <code>satellite__norad_cat_id</code> é ignorado em silêncio e devolveria observações de qualquer satélite, por isso o painel e o coletor conferem o NORAD de cada observação. Cada observação traz <code>demoddata</code> (um arquivo por quadro, ou imagens PNG), <code>payload</code> (áudio) e <code>waterfall</code>.</p>
+<p><b class="amb">SatNOGS DB</b> (<code>db.satnogs.org/api</code>): catálogo de satélites, transmissores e o decoder cadastrado de cada um. A telemetria já decodificada (<code>/telemetry/</code>) exige token pessoal.</p>
+<p><b class="amb">Arquivos</b>: imagens, waterfalls e quadros ficam num armazenamento S3 (wasabisys.com) e os áudios no fastly. Os dois liberam o navegador (cabeçalho <code>Access-Control-Allow-Origin: *</code>), então são baixados direto.</p>
+<p><b class="amb">Proxy</b>: as duas APIs não liberam chamadas de outros sites (CORS). O Worker no Cloudflare repete a chamada e devolve com a liberação; ele só aceita destinos do SatNOGS e do archive.org e só atende este site. O endereço fica no campo <code>proxy</code> do <code>satellites.json</code>.</p>
+<p><b class="amb">Coletor</b> (<code>scripts/collect.py</code>, a cada 30 min): grava <code>data/&lt;norad&gt;.json</code> com quadros e produtos das observações dos satélites do <code>satellites.json</code>, mais <code>catalog.json</code> (catálogo e transmissores ativos) e <code>stations.json</code> (país de cada estação, pela coordenada). Funciona mesmo sem proxy e guarda histórico.</p>
+</div></details>
+
+<details><summary>motor SPACELAB: NGHam e os layouts do spacelab-decoder</summary><div>
+<p>O NGHam é o protocolo de enlace dos satélites do SpaceLab/UFSC (FloripaSat, GOLDS-UFSC, Catarina). Um quadro tem:</p>
+<ul>
+<li><b>preâmbulo</b> AA AA AA AA e <b>sync word</b> 5D E6 2A 7E, que marcam o início;</li>
+<li><b>size tag</b>: 3 bytes que indicam um de 7 tamanhos de dados (28, 60, 92, 124, 156, 188 ou 220 bytes). As 7 tags são bem diferentes entre si, então o painel aceita até 6 bits errados e ainda acerta o tamanho;</li>
+<li><b>embaralhamento</b>: o bloco é somado (XOR) com a sequência pseudoaleatória CCSDS de 255 bytes, para ter transições suficientes no rádio. O painel desfaz a soma;</li>
+<li><b>Reed-Solomon</b>: código CCSDS sobre GF(2<sup>8</sup>) (polinômio 0x187, primeira raiz 112, passo 11), com 16 símbolos de paridade nos três tamanhos menores e 32 nos maiores. Corrige até 8 ou 16 bytes errados em qualquer posição;</li>
+<li><b>cabeçalho</b> (5 bits de preenchimento e 3 de flags), <b>dados</b> e <b>CRC-16/X-25</b>, que confirma o resultado.</li>
+</ul>
+<p>Os dados são um pacote <b>SLP</b>: o byte 0 é o tipo (ex.: 0x10, telemetria geral do GOLDS-UFSC) e os bytes 1 a 7 o indicativo. Cada campo tem posição e fórmula de conversão tiradas dos arquivos do spacelab-decoder, traduzidas de Python para JavaScript e conferidas fórmula a fórmula contra o original. O Catarina-A2 usa AX100 modo 5 com cabeçalho CSP: ali o tipo vem da porta de destino.</p>
+<p>Para escolher o tipo, o motor tenta três leituras do quadro (payload do NGHam, quadro direto e campo info do AX.25) e pontua cada uma: CRC válido, proporção de campos lidos e indicativo plausível. Fica com a maior pontuação; as outras tentativas aparecem no rastro. No hexdump do pacote, cada cor é um campo do layout.</p>
+</div></details>
+
+<details><summary>motor OFICIAL: satnogs-decoders e Kaitai Struct</summary><div>
+<p>O <b>Kaitai Struct</b> é uma linguagem que descreve formatos binários: em vez de código, um arquivo diz "2 bytes de tensão, depois 1 byte de temperatura...". O projeto <b>satnogs-decoders</b> da Libre Space Foundation tem 169 dessas descrições, uma por satélite ou família, e é o mesmo que alimenta o painel Grafana do SatNOGS.</p>
+<p>O painel baixa o pacote do PyPI e o roda dentro do navegador com o <b>Pyodide</b> (Python compilado para WebAssembly). Um decoder "aceita" um quadro quando lê a estrutura inteira sem exceção e produz pelo menos um campo.</p>
+<p>Motivos de recusa comuns, que aparecem no rastro e no LOG_DECODE:</p>
+<ul>
+<li><code>EOFError</code>: o quadro é mais curto do que a estrutura espera (quadro truncado ou de outro tipo);</li>
+<li><code>ValidationNotEqualError</code>: um campo de verificação (indicativo, ID, versão) não tem o valor esperado: o quadro é de outro satélite ou de outro tipo de pacote;</li>
+<li><code>UnicodeDecodeError</code>: o decoder esperava texto e encontrou bytes que não são texto.</li>
+</ul>
+<p>No modo automático só entra o decoder cadastrado no SatNOGS DB para aquele satélite. Um decoder de outro satélite só é aplicado se você forçar, e aí aparece como PALPITE: os nomes dos campos são do outro satélite. O botão "árvore Kaitai" mostra a estrutura completa que o decoder montou ao ler o quadro.</p>
+</div></details>
+
+<details><summary>motor NATIVO: AX.25, CSP e texto</summary><div>
+<p><b>AX.25</b>: o cabeçalho tem destino (7 bytes), origem (7 bytes), até 8 repetidores, um byte de controle e, nos quadros de informação, o PID. Os indicativos usam letras e dígitos deslocados 1 bit para a esquerda; o sétimo byte de cada endereço tem o SSID e, no último endereço, o bit de fim. Quando a leitura falha, o rastro diz qual byte quebrou a regra. No hexdump as partes do cabeçalho ficam coloridas.</p>
+<p><b>CSP</b> (CubeSat Space Protocol v1, usado por placas GomSpace): 32 bits com prioridade (2), origem (5), destino (5), porta de destino (6), porta de origem (6), reservado (4) e as flags HMAC, XTEA, RDP e CRC; com a flag de CRC, os 4 últimos bytes são um CRC-32C. Aparece como hipótese, porque qualquer 4 bytes formam um cabeçalho CSP.</p>
+<p><b>Texto</b>: se pelo menos 90% dos bytes forem imprimíveis, o quadro é tratado como texto (beacons em ASCII, CW decodificado pela estação).</p>
+</div></details>
+
+<details><summary>força bruta e laboratório de bytes</summary><div>
+<p><b>Força bruta</b>: roda todos os decoders oficiais numa amostra de até 16 quadros espalhados no tempo e ordena o resultado: primeiro o decoder cadastrado no DB, depois os <b>estritos</b> (que recusam ruído) e por último os <b>permissivos</b>. Para saber quem é permissivo, o painel testa cada decoder com 3 blocos de bytes aleatórios ao carregar o motor. "Aceitou 12/16" quer dizer 12 quadros lidos sem erro; "campos" é a média de campos por quadro. Aceitar não prova que o decoder é o certo: confira se os valores fazem sentido.</p>
+<p><b>Varredura de offsets</b>: entre quadros do mesmo tamanho, procura posições cujo valor muda devagar. A suavidade é 1 menos a variação total dividida por (n-1) vezes a faixa: tensões e temperaturas variam pouco de um quadro para o outro e dão suavidade alta; contadores, ruído e dados cifrados dão baixa. Um candidato vira campo manual com um clique.</p>
+</div></details>
+
+<details><summary>canivete suíço</summary><div>
+<p>Abre um quadro em camadas, como uma receita: cada operação recebe a saída da anterior, e a lista mostra o tamanho antes e depois. As operações:</p>
+<ul>
+<li><b>recortar</b>, <b>inverter a ordem dos bytes</b>, <b>trocar bytes em pares ou grupos de 4</b> (endianness);</li>
+<li><b>inverter a ordem dos bits</b> de cada byte (rádios que mandam o bit menos significativo primeiro), <b>NOT</b>, <b>XOR</b> com chave e <b>deslocar o fluxo de bits</b> de 1 a 7 bits (quadros desalinhados);</li>
+<li><b>NRZI</b> (transição = 0, como no AX.25), <b>G3RUH</b> (desembaralhador 1 + x<sup>12</sup> + x<sup>17</sup> do 9600 baud), <b>Manchester</b>;</li>
+<li><b>CCSDS</b> (tirar a sequência pseudoaleatória), <b>HDLC</b> (achar as flags 7E, tirar o bit stuffing, montar os bytes com o bit menos significativo primeiro e conferir o FCS), <b>KISS</b>, texto hex ou base64 para bytes;</li>
+<li><b>cortar depois de um padrão</b> (sync word), <b>NGHam</b> completo, <b>Reed-Solomon (255,223)</b> CCSDS em base dual ou convencional, e <b>pular o cabeçalho AX.25</b>.</li>
+</ul>
+<p>As análises rodam sozinhas sobre a saída: entropia e valores distintos (comparados com o esperado para bytes aleatórios do mesmo tamanho), marcadores conhecidos alinhados ou deslocados em bits (ASM CCSDS 1ACFFC1D, NGHam, AX100, flags HDLC, KISS, preâmbulos), indicativos AX.25 em qualquer posição, CRC no fim (12 algoritmos, cada um conferido contra o valor oficial de "123456789"), trechos de texto e um inspetor que lê o byte clicado como inteiro de 8 a 32 bits, ponto flutuante e data Unix.</p>
+<p>Uma receita que funcionou pode ser aplicada ao satélite: ela passa a rodar antes dos motores em todos os quadros, o hex original continua guardado e as exportações levam os dois. Exemplo para AX.25 9600 baud gravado como fluxo de bits bruto: G3RUH, depois NRZI, depois HDLC.</p>
+</div></details>
+
+<details><summary>log de decodificação</summary><div>
+<p>Cada vez que um satélite passa pela cascata (busca, troca de decoder, receita, campo manual), o LOG_DECODE ganha uma linha <b>LOTE</b> com o placar por motor e as falhas mais comuns do decoder oficial. Depois vêm as linhas dos quadros cujo resultado mudou desde a última passagem: <span class="ok">ok</span> (campos de telemetria), <span class="cy">parc</span> (só cabeçalho ou texto), <span class="bad">falha</span> (nada reconhecido, com o motivo). Imagens APT e SSTV entram como <span style="color:var(--vi)">IMAGEM</span>. Clique numa linha de quadro para abri-lo; o filtro e a exportação ajudam a investigar um satélite novo.</p>
+</div></details>
+
+<details><summary>decode especial: APT dos NOAA</summary><div>
+<p><b>O sinal</b>: os NOAA-15, 18 e 19 transmitiam em 137 MHz uma subportadora de 2400 Hz modulada em amplitude. Cada linha dura 0,5 s e tem 2080 palavras (4160 palavras por segundo): Sync A (7 ciclos de 1040 Hz), espaço, canal A (909 palavras), telemetria, Sync B (7 ciclos de 832 Hz), espaço, canal B (909) e telemetria. O canal A costuma ser visível ou infravermelho próximo, o B infravermelho térmico.</p>
+<p><b>O decodificador</b>, passo a passo:</p>
+<ol>
+<li>o navegador reamostra o áudio para 16.640 Hz (4 amostras por palavra);</li>
+<li>mistura com 2400 Hz, filtra abaixo de 2 kHz e tira o módulo do sinal complexo: é a demodulação AM, que não depende da fase da portadora;</li>
+<li>procura o Sync A por correlação normalizada em cada bloco de 2080 palavras;</li>
+<li>ajusta uma reta "posição do sincronismo por número da linha" por mínimos quadrados, crescendo a partir da linha mais forte. A inclinação mede o erro de relógio entre o satélite e quem gravou (em ppm) e corrige a imagem torta;</li>
+<li>lê as 2080 palavras de cada linha nessa reta e ajusta o contraste pelos percentis 0,5% e 99,5%.</li>
+</ol>
+<p>No ruído puro, a correlação máxima de cada bloco chega a cerca de 0,56 por acaso. Por isso o painel exige 0,62 em pelo menos 12 linhas alinhadas, e recusa o áudio se não houver isso: é o que acontece com observações feitas depois da desativação dos NOAA, em 2025.</p>
+</div></details>
+
+<details><summary>decode especial: SSTV da ISS</summary><div>
+<p><b>O sinal</b>: em SSTV a frequência do tom é o brilho: 1500 Hz é preto, 2300 Hz branco e 1200 Hz marca o sincronismo. Cada imagem começa com o cabeçalho <b>VIS</b>: 300 ms a 1900 Hz, 10 ms a 1200 Hz, 300 ms a 1900 Hz, bit de partida a 1200 Hz, os 7 bits do código do modo (1100 Hz = 1, 1300 Hz = 0, o menos significativo primeiro), um bit de paridade par e o bit de parada, todos de 30 ms.</p>
+<table class="modes"><tr><th>modo</th><th>VIS</th><th>resolução</th><th>cor</th><th>duração</th></tr>
+<tr><td>PD90</td><td>99</td><td>320 x 256</td><td>Y, R-Y, B-Y por par de linhas</td><td>90 s</td></tr>
+<tr><td>PD120</td><td>95</td><td>640 x 496</td><td>Y, R-Y, B-Y por par de linhas</td><td>126 s</td></tr>
+<tr><td>PD160, PD180, PD240, PD290</td><td>98, 96, 97, 94</td><td>512 x 400 a 800 x 616</td><td>Y, R-Y, B-Y por par de linhas</td><td>161 a 289 s</td></tr>
+<tr><td>Robot36</td><td>8</td><td>320 x 240</td><td>Y por linha, R-Y e B-Y alternados</td><td>36 s</td></tr>
+<tr><td>Martin M1, M2</td><td>44, 40</td><td>320 e 160 x 256</td><td>verde, azul, vermelho</td><td>114 e 58 s</td></tr>
+<tr><td>Scottie S1, S2, DX</td><td>60, 56, 76</td><td>320 x 256</td><td>verde, azul, (sync), vermelho</td><td>110, 71 e 269 s</td></tr></table>
+<p><b>O decodificador</b>, passo a passo:</p>
+<ol>
+<li>o navegador reamostra o áudio para 12 kHz;</li>
+<li>mistura com 1900 Hz, filtra abaixo de 2,2 kHz e mede a frequência instantânea pela diferença de fase entre amostras vizinhas (demodulação FM);</li>
+<li>procura todos os cabeçalhos VIS do áudio: uma passagem da ISS costuma trazer várias imagens, e cada uma é decodificada separadamente;</li>
+<li>acompanha os pulsos de sincronismo linha a linha. A detecção usa a média da frequência na janela do pulso, que resiste ao ruído, e mede o fim do pulso na travessia de 1350 Hz (o meio do caminho até o patamar de 1500 Hz);</li>
+<li>ajusta a reta dos pulsos, o que corrige a inclinação causada por erro de relógio;</li>
+<li>cada pixel é a média da frequência no intervalo de tempo dele; nos modos PD e Robot converte Y, R-Y e B-Y para RGB, nos Martin e Scottie usa as cores diretamente.</li>
+</ol>
+<p>Sem cabeçalho VIS (gravação começou no meio da imagem), o painel procura a sequência mais longa de pulsos com o período de cada modo; você também pode forçar o modo.</p>
+<p><b>Validação</b>: com imagens codificadas pelo pySSTV (um codificador independente), a luminância decodificada fica entre 35 e 41 dB de PSNR nos modos PD, Robot36 e Martin, com erros de relógio de até 700 ppm medidos exatamente. Com o áudio real de uma passagem da ISS no evento ARISS de 26/10/2026 (Robot36 em 437,550 MHz), a imagem saiu reta e mais limpa que a publicada pela própria estação. No Scottie, o pySSTV varre cada cor em 136,74 ms em vez dos 138,24 ms do padrão; o painel segue o padrão (como o slowrx e o MMSSTV).</p>
+<p><b>Na ISS</b>, SSTV só existe nos eventos ARISS: PD120 em 145,800 MHz e, nos eventos de 2026, Robot36 em 437,550 MHz. O cliente do SatNOGS também tem um decodificador de PD120 e algumas estações rodam outros; as imagens que elas publicam aparecem na coluna IMG.</p>
+<p><b>METEOR-M</b> transmite LRPT, digital (QPSK, 72 kbit/s): o áudio da observação não carrega esse sinal, então só dá para ver as imagens que as estações publicam.</p>
+</div></details>
+
+<details><summary>limites, créditos e licenças</summary><div>
+<p>Resultados de força bruta e palpites são hipóteses até baterem com a documentação do satélite. Os campos do GOLDS-UFSC vêm do layout de pré-lançamento e devem ser conferidos com o primeiro quadro real. País da estação é o da cidade mais próxima da coordenada.</p>
+<p>Dados: SatNOGS e Libre Space Foundation, CC BY-SA. Layouts: spacelab-decoder (SpaceLab/UFSC, GPLv3). Decoders oficiais: satnogs-decoders (Libre Space Foundation, AGPLv3), carregados em tempo de execução. NGHam conferido contra o pyngham. Testes de SSTV feitos com o pySSTV.</p>
+</div></details>
+</div>
+
+<footer><span>spacelab-dashboard v1.1.0</span><span>2026</span><span>ramon.mayor@ifsc.edu.br</span><span>dados: <a href="https://satnogs.org" target="_blank" rel="noopener">SatNOGS</a> (CC BY-SA)</span><span>layouts: <a href="https://github.com/spacelab-ufsc/spacelab-decoder" target="_blank" rel="noopener">spacelab-decoder</a></span></footer>
 </div>
 <div id="tip"></div>
 
@@ -271,14 +449,55 @@ def _perm():
 def ds_names():
     return json.dumps(NAMES)
 
+def _err(e):
+    m = str(e).replace('\n', ' ')
+    return (type(e).__name__ + (': ' + m if m else ''))[:160]
+
 def ds_decode(name, hexs):
+    """Para cada quadro: {"f": campos} ou {"e": "TipoDeErro: mensagem"}."""
     res = []
     for h in json.loads(hexs):
         try:
-            res.append(_one(name, bytes.fromhex(h)))
+            res.append({"f": _one(name, bytes.fromhex(h))})
         except Exception as e:
-            res.append(None)
+            res.append({"e": _err(e)})
     return json.dumps(res)
+
+def _tree(v, depth=0):
+    if depth > 9:
+        return '...'
+    if isinstance(v, (bool, int, float, str)) or v is None:
+        return _clean(v) if not isinstance(v, str) else v[:200]
+    if isinstance(v, (bytes, bytearray)):
+        return bytes(v).hex()
+    if isinstance(v, list):
+        out = [_tree(x, depth + 1) for x in v[:48]]
+        if len(v) > 48:
+            out.append('... +%d itens' % (len(v) - 48))
+        return out
+    if hasattr(v, 'name') and hasattr(v, 'value') and type(v).__module__ != 'builtins' and not hasattr(v, '_io'):
+        return '%s (%s)' % (v.name, v.value)
+    out = {}
+    for k in dir(v):
+        if k.startswith('_'):
+            continue
+        try:
+            x = getattr(v, k)
+        except Exception as e:
+            out[k] = '<erro: %s>' % type(e).__name__
+            continue
+        if callable(x):
+            continue
+        out[k] = _tree(x, depth + 1)
+    return out
+
+def ds_tree(name, hexstr):
+    """Arvore completa que o Kaitai montou para um quadro (para ver como foi lido)."""
+    try:
+        obj = getattr(D, name).from_bytes(bytes.fromhex(hexstr))
+        return json.dumps({"ok": True, "tree": _tree(obj)})
+    except Exception as e:
+        return json.dumps({"ok": False, "e": _err(e)})
 
 def ds_force(hexs, prefer):
     frames = [bytes.fromhex(h) for h in json.loads(hexs)]
@@ -298,6 +517,328 @@ def ds_force(hexs, prefer):
             rank.append({'name': n, 'ok': ok, 'fields': round(nf / ok, 1), 'generic': n in _GENERIC or n in perm, 'preferred': n.lower() in prefer})
     rank.sort(key=lambda r: (not r['preferred'], r['generic'], -r['ok'], -r['fields']))
     return json.dumps(rank)
+</script>
+<script id="dsp" type="text/plain">// ===================== DSP: decodificadores APT (NOAA) e SSTV =====================
+// Funcoes puras, sem DOM. Rodam dentro de um Web Worker no painel e no Node nos testes.
+var DSP = (function () {
+  'use strict';
+  var TAU = 2 * Math.PI;
+
+  // ---------- filtros ----------
+  function lowpass(fc, fs, taps) {
+    var h = new Float32Array(taps), M = taps - 1, sum = 0, wc = TAU * fc / fs;
+    for (var i = 0; i < taps; i++) {
+      var n = i - M / 2, x = n === 0 ? wc / Math.PI : Math.sin(wc * n) / (Math.PI * n);
+      h[i] = x * (0.54 - 0.46 * Math.cos(TAU * i / M)); sum += h[i];
+    }
+    for (i = 0; i < taps; i++) h[i] /= sum;
+    return h;
+  }
+  // Mistura x com exp(-j*2*pi*f0*n/fs), aplica o FIR h (atraso compensado) e
+  // devolve uma amostra a cada 'step'. Processa em blocos para economizar memoria.
+  function mixFilter(x, fs, f0, h, step, onProg) {
+    var N = x.length, M = h.length, D = (M - 1) >> 1, w = TAU * f0 / fs, cw = Math.cos(w), sw = Math.sin(w);
+    var L = Math.floor((N - 1) / step) + 1, re = new Float32Array(L), im = new Float32Array(L), OB = 32768;
+    for (var o0 = 0; o0 < L; o0 += OB) {
+      var o1 = Math.min(L, o0 + OB), j0 = Math.max(0, o0 * step + D - (M - 1)), j1 = Math.min(N - 1, (o1 - 1) * step + D);
+      var len = j1 - j0 + 1, br = new Float32Array(len), bi = new Float32Array(len), c = Math.cos(w * j0), s = Math.sin(w * j0);
+      for (var t = 0; t < len; t++) { var v = x[j0 + t]; br[t] = v * c; bi[t] = -v * s; var c2 = c * cw - s * sw; s = s * cw + c * sw; c = c2; }
+      for (var o = o0; o < o1; o++) {
+        var n = o * step, a = 0, b = 0, k0 = Math.max(0, n + D - j1), k1 = Math.min(M - 1, n + D - j0), base = n + D - j0;
+        for (var k = k0; k <= k1; k++) { var tt = base - k; a += h[k] * br[tt]; b += h[k] * bi[tt]; }
+        re[o] = a; im[o] = b;
+      }
+      if (onProg) onProg(o1 / L);
+    }
+    return { re: re, im: im, fs: fs / step };
+  }
+  function resampleLinear(x, fsIn, fsOut) {
+    if (Math.abs(fsIn - fsOut) < 1e-9) return x;
+    var r = fsIn / fsOut, L = Math.floor((x.length - 1) / r), y = new Float32Array(L);
+    for (var i = 0; i < L; i++) { var p = i * r, j = p | 0, f = p - j; y[i] = x[j] * (1 - f) + x[j + 1] * f; }
+    return y;
+  }
+  function interp(x, p) { if (p <= 0) return x[0]; var j = p | 0; if (j >= x.length - 1) return x[x.length - 1]; var f = p - j; return x[j] * (1 - f) + x[j + 1] * f; }
+  // ajuste linear robusto p = a + b*k (minimos quadrados com rejeicao de discrepantes)
+  function lsq(pts) {
+    var n = pts.length, sk = 0, sp = 0;
+    for (var i = 0; i < n; i++) { sk += pts[i][0]; sp += pts[i][1]; }
+    var mk = sk / n, mp = sp / n, num = 0, den = 0;
+    for (i = 0; i < n; i++) { var dk = pts[i][0] - mk; num += dk * (pts[i][1] - mp); den += dk * dk; }
+    var b = den > 0 ? num / den : NaN; return { a: mp - b * mk, b: b };
+  }
+
+  // ================= APT (NOAA 15/18/19) =================
+  // Linha APT: 2080 palavras, 2 linhas/s (4160 palavras/s), subportadora de 2400 Hz em AM.
+  // Sync A = 7 ciclos de 1040 Hz; Sync B = 7 ciclos de 832 Hz.
+  var SYNC_A = '000011001100110011001100110011000000000';
+  var APT = { words: 2080, rate: 4160, imgA: [86, 995], imgB: [1126, 2035], telA: [995, 1040], telB: [2035, 2080] };
+  function decodeAPT(x, fs, opt, prog) {
+    opt = opt || {}; prog = prog || function () {};
+    if (x.length < fs * 2) throw new Error('áudio curto demais para APT (menos de 2 s)');
+    // 1) demodulacao AM: mistura com 2400 Hz, passa-baixa 2000 Hz, modulo
+    var step = Math.max(1, Math.floor(fs / 8320)), h = lowpass(2000, fs, 63);
+    var z = mixFilter(x, fs, 2400, h, step, function (p) { prog(0.05 + 0.45 * p, 'demodulando AM (2400 Hz)'); });
+    var amp = new Float32Array(z.re.length);
+    for (var i = 0; i < amp.length; i++) amp[i] = Math.hypot(z.re[i], z.im[i]);
+    if (Math.abs(z.fs - 8320) > 1e-6) amp = resampleLinear(amp, z.fs, 8320);
+    var F2 = 8320, N1 = amp.length >> 1, a1 = new Float32Array(N1);
+    for (i = 0; i < N1; i++) a1[i] = 0.5 * (amp[2 * i] + amp[2 * i + 1]);
+    // 2) correlacao normalizada com o Sync A
+    prog(0.55, 'procurando Sync A');
+    var T = SYNC_A.length, tpl = new Float32Array(T), mt = 0;
+    for (i = 0; i < T; i++) { tpl[i] = SYNC_A[i] === '1' ? 1 : -1; mt += tpl[i]; }
+    mt /= T; var tn = 0; for (i = 0; i < T; i++) { tpl[i] -= mt; tn += tpl[i] * tpl[i]; } tn = Math.sqrt(tn);
+    var NC = N1 - T, ncc = new Float32Array(Math.max(0, NC)), s1 = 0, s2 = 0;
+    for (i = 0; i < T; i++) { s1 += a1[i]; s2 += a1[i] * a1[i]; }
+    for (var n = 0; n < NC; n++) {
+      var acc = 0; for (var k = 0; k < T; k++) acc += tpl[k] * a1[n + k];
+      var vr = s2 - s1 * s1 / T; ncc[n] = vr > 1e-12 ? acc / (tn * Math.sqrt(vr)) : 0;
+      s1 += a1[n + T] - a1[n]; s2 += a1[n + T] * a1[n + T] - a1[n] * a1[n];
+    }
+    // 3) um candidato por bloco de 2080 palavras
+    var W = APT.words, cands = [];
+    for (var b0 = 0; b0 < NC; b0 += W) {
+      var best = -2, bp = -1;
+      for (n = b0; n < Math.min(NC, b0 + W); n++) if (ncc[n] > best) { best = ncc[n]; bp = n; }
+      if (bp >= 0) cands.push({ p: bp, v: best });
+    }
+    for (i = 1; i < cands.length; i++) if (cands[i].p - cands[i - 1].p < 100) { if (cands[i].v > cands[i - 1].v) cands[i - 1].v = -2; else cands[i].v = -2; }
+    // no ruido puro, o maximo da correlacao em cada bloco chega a ~0,56 por acaso: exige 0,62
+    var strong = cands.filter(function (c) { return c.v > 0.62; });
+    if (strong.length < 12) throw new Error('Sync A não encontrado: só ' + strong.length + ' de ' + cands.length + ' blocos têm algo parecido com sincronismo. O áudio não contém APT.');
+    // 4) ajuste da reta de sincronismo (corrige a inclinacao causada por erro de relogio)
+    prog(0.65, 'ajustando o relógio das linhas');
+    var anchor = strong.reduce(function (m, c) { return c.v > m.v ? c : m; }), A = anchor.p, B = W, win = 6, tol = 14, pts = [];
+    var maxK = Math.ceil(NC / W) + 2;
+    for (var it = 0; it < 40; it++) {
+      pts = [];
+      for (i = 0; i < strong.length; i++) { var c = strong[i], kk = Math.round((c.p - A) / B); if (Math.abs(kk) > win) continue; if (Math.abs(c.p - (A + B * kk)) < tol) pts.push([kk, c.p]); }
+      if (pts.length >= 3) { var f = lsq(pts); if (isFinite(f.b) && Math.abs(f.b / W - 1) < 0.02) { A = f.a; B = f.b; } }
+      if (win > maxK) { if (tol > 4) tol = Math.max(4, tol / 2); else break; } else win = Math.ceil(win * 1.7);
+    }
+    var ks = pts.map(function (p) { return p[0]; }), kmin = Math.min.apply(null, ks), kmax = Math.max.apply(null, ks);
+    if (pts.length < 12 || pts.length < 0.25 * (kmax - kmin + 1)) throw new Error('Sync A sem regularidade: ' + pts.length + ' linhas alinhadas em ' + (kmax - kmin + 1) + '. O áudio não contém APT utilizável.');
+    var quality = 0; for (i = 0; i < pts.length; i++) { var pp = Math.round(pts[i][1]); quality += ncc[Math.min(NC - 1, Math.max(0, pp))]; } quality /= pts.length;
+    // 5) amostragem das linhas (8320 Hz, interpolacao linear)
+    prog(0.75, 'montando a imagem');
+    var lines = kmax - kmin + 1, img = new Float32Array(lines * W), bF = 2 * B;
+    for (var L = 0; L < lines; L++) {
+      var st = 2 * (A + B * (kmin + L));
+      for (var j = 0; j < W; j++) img[L * W + j] = interp(amp, st + j * bF / W);
+    }
+    // 6) contraste: percentis da area de imagem dos dois canais
+    var vals = [];
+    for (L = 0; L < lines; L += 2) for (j = APT.imgA[0]; j < APT.imgB[1]; j += 5) if (j < APT.imgA[1] || j >= APT.imgB[0]) vals.push(img[L * W + j]);
+    vals.sort(function (p, q) { return p - q; });
+    var lo = vals[Math.floor(vals.length * 0.005)] || 0, hi = vals[Math.floor(vals.length * 0.995)] || 1; if (hi <= lo) hi = lo + 1e-6;
+    var gray = new Uint8ClampedArray(lines * W);
+    for (i = 0; i < gray.length; i++) gray[i] = (img[i] - lo) / (hi - lo) * 255;
+    prog(1, 'pronto');
+    return { kind: 'apt', w: W, h: lines, gray: gray, info: { linhas: lines, comSync: pts.length, qualidade: +quality.toFixed(3), erroRelogioPpm: Math.round((B / W - 1) * 1e6), duracaoS: +(x.length / fs).toFixed(1), inicioS: +(2 * (A + B * kmin) / F2).toFixed(2) } };
+  }
+
+  // ================= SSTV =================
+  // tempos em ms, relativos ao inicio do pulso de sincronismo de cada linha (ou par de linhas, nos modos PD)
+  function pd(name, vis, w, h, c) { return { name: name, vis: vis, kind: 'pd', w: w, h: h, sync: 20, period: 22.08 + 4 * c, rows: h / 2, first: 0, seg: { y0: [22.08, c], cr: [22.08 + c, c], cb: [22.08 + 2 * c, c], y1: [22.08 + 3 * c, c] } }; }
+  function martin(name, vis, w, c) { return { name: name, vis: vis, kind: 'rgb', w: w, h: 256, sync: 4.862, period: 4.862 + 0.572 * 4 + 3 * c, rows: 256, first: 0, seg: { g: [5.434, c], b: [5.434 + c + 0.572, c], r: [5.434 + 2 * (c + 0.572), c] } }; }
+  function scottie(name, vis, c) { return { name: name, vis: vis, kind: 'rgb', w: 320, h: 256, sync: 9, period: 13.5 + 3 * c, rows: 256, first: 3 + 2 * c, seg: { g: [-(1.5 + 2 * c), c], b: [-c, c], r: [10.5, c] } }; }
+  var MODES = [
+    pd('PD90', 99, 320, 256, 170.24), pd('PD120', 95, 640, 496, 121.6), pd('PD160', 98, 512, 400, 195.584),
+    pd('PD180', 96, 640, 496, 183.04), pd('PD240', 97, 640, 496, 244.48), pd('PD290', 94, 800, 616, 228.8),
+    { name: 'Robot36', vis: 8, kind: 'r36', w: 320, h: 240, sync: 9, period: 150, rows: 240, first: 0, seg: { y: [12, 88], sep: [100.5, 3.5], c: [106, 44] } },
+    martin('MartinM1', 44, 320, 146.432), martin('MartinM2', 40, 160, 73.216),
+    scottie('ScottieS1', 60, 138.24), scottie('ScottieS2', 56, 88.064), scottie('ScottieDX', 76, 345.6)
+  ];
+  var BYVIS = {}, BYNAME = {}; MODES.forEach(function (m) { BYVIS[m.vis] = m; BYNAME[m.name] = m; });
+
+  // demodulacao FM das frequencias de audio: devolve f(t) em Hz e a amplitude
+  function fmTrack(x, fs, prog) {
+    var taps = Math.max(31, Math.round(fs / 12000 * 47) | 1); if (!(taps & 1)) taps++;
+    var z = mixFilter(x, fs, 1900, lowpass(2200, fs, taps), 1, function (p) { prog && prog(0.05 + 0.4 * p, 'demodulando FM (tons de 1100 a 2300 Hz)'); });
+    var N = z.re.length, f = new Float32Array(N), amp = new Float32Array(N), k = fs / TAU;
+    for (var n = 1; n < N - 1; n++) {
+      var r0 = z.re[n - 1], i0 = z.im[n - 1], r1 = z.re[n + 1], i1 = z.im[n + 1];
+      var v = 1900 + 0.5 * k * Math.atan2(i1 * r0 - r1 * i0, r1 * r0 + i1 * i0);
+      f[n] = v < 900 ? 900 : v > 2700 ? 2700 : v; amp[n] = Math.hypot(z.re[n], z.im[n]);
+    }
+    f[0] = f[1]; f[N - 1] = f[N - 2]; amp[0] = amp[1]; amp[N - 1] = amp[N - 2];
+    var g = new Float32Array(N); g[0] = f[0]; g[N - 1] = f[N - 1];
+    for (n = 1; n < N - 1; n++) g[n] = (f[n - 1] + 2 * f[n] + f[n + 1]) * 0.25;
+    return { f: g, amp: amp };
+  }
+  function blockMean(f, fs, ms) {
+    var B = Math.max(1, Math.round(fs * ms / 1000)), L = Math.floor(f.length / B), out = new Float32Array(L);
+    for (var i = 0; i < L; i++) { var s = 0; for (var j = 0; j < B; j++) s += f[i * B + j]; out[i] = s / B; }
+    return out;
+  }
+  // procura cabecalhos VIS: lider 1900 Hz, bit de partida 1200 Hz, 7 bits + paridade (1100 = 1, 1300 = 0), parada 1200 Hz
+  function findVIS(f, fs) {
+    var fb = blockMean(f, fs, 1), out = [], near = function (v, c, t) { return Math.abs(v - c) < t; };
+    function mean(a, b) { var s = 0, n = 0; for (var i = Math.max(0, a); i < Math.min(fb.length, b); i++) { s += fb[i]; n++; } return n ? s / n : 0; }
+    for (var m = 260; m < fb.length - 310; m++) {
+      if (!near(fb[m], 1200, 70) || near(fb[m - 1], 1200, 70)) continue;
+      var lead = 0; for (var i = m - 240; i < m - 15; i++) if (near(fb[i], 1900, 70)) lead++;
+      if (lead < 0.7 * 225) continue;
+      if (!near(mean(m + 3, m + 27), 1200, 60)) continue;
+      var code = 0, ones = 0, ok = true, bits = [];
+      for (var b = 0; b < 8; b++) {
+        var c = m + 30 + 30 * b + 15, v = mean(c - 9, c + 9);
+        if (near(v, 1100, 75)) { bits.push(1); if (b < 7) code |= 1 << b; ones++; }
+        else if (near(v, 1300, 75)) bits.push(0);
+        else { ok = false; break; }
+      }
+      if (!ok) continue;
+      if (!near(mean(m + 274, m + 296), 1200, 80)) continue;
+      var parity = (ones % 2) === 0, mode = BYVIS[code];
+      // borda exata 1900 -> 1200 Hz do bit de partida
+      var p0 = Math.round((m - 3) * fs / 1000), p1 = Math.round((m + 3) * fs / 1000), edge = p0;
+      for (var p = p0; p < p1; p++) if (f[p] < 1550) { edge = p; break; }
+      out.push({ ms: m, edge: edge, code: code, parity: parity, mode: mode ? mode.name : null });
+      m += mode ? Math.round(mode.rows * mode.period * 0.9) : 300;
+    }
+    return out;
+  }
+  // indicador de pulso de sincronismo (1200 Hz) com soma movel do tamanho do pulso
+  // pontuacao do pulso de sincronismo: media da frequencia numa janela do tamanho do pulso.
+  // Pulso de 1200 Hz da 1; patamar de 1500 Hz ou imagem (>= 1500 Hz) da 0. Robusta a ruido.
+  function syncScore(f, amp, fs, syncMs, ampMin) {
+    var N = f.length, Ls = Math.max(3, Math.round(syncMs * fs / 1000)), m = new Float32Array(N), s = 0, n;
+    for (n = 0; n < Math.min(Ls, N); n++) s += f[n];
+    for (n = 0; n + Ls <= N; n++) { var v = (1500 - s / Ls) / 300; m[n] = v < 0 ? 0 : v > 1 ? 1 : v; s += (n + Ls < N ? f[n + Ls] : 0) - f[n]; }
+    return m;
+  }
+  // acompanha os pulsos de sincronismo linha a linha a partir da previsao (a, b) e ajusta a reta final
+  // refina o inicio do pulso: acha o fim do tom de 1200 Hz (travessia de 1350 Hz rumo ao patamar de 1500 Hz) e volta a duracao do pulso
+  function refineSync(f, fs, mode, pos, scale) {
+    var Ls = mode.sync * fs / 1000 * scale, hold = Math.max(2, Math.round(0.3 * fs / 1000)), lo = Math.round(pos + 0.5 * Ls), hi = Math.min(f.length - hold - 1, Math.round(pos + 1.5 * Ls));
+    for (var e = Math.max(1, lo); e < hi; e++) {
+      if (f[e - 1] <= 1350 && f[e] > 1350) {
+        var okh = true; for (var t = 1; t <= hold; t++) if (f[e + t] < 1350) { okh = false; break; }
+        if (okh) return e - 1 + (1350 - f[e - 1]) / (f[e] - f[e - 1]) - Ls;
+      }
+    }
+    return pos;
+  }
+  function trackSync(m, f, fs, mode, a, b, rows, limit) {
+    var win = Math.round((mode.sync * 0.6 + 1.5) * fs / 1000), det = [], sk = 0, sp = 0, skk = 0, skp = 0;
+    for (var k = 0; k < rows; k++) {
+      var pred = a + b * k; if (pred + b > limit) break;
+      var lo = Math.max(0, Math.round(pred - win)), hi = Math.min(m.length - 1, Math.round(pred + win)), best = 0, pos = -1;
+      for (var p = lo; p <= hi; p++) if (m[p] > best) { best = m[p]; pos = p; }
+      if (best >= 0.6 && pos >= 0) {
+        var c = refineSync(f, fs, mode, pos, b / (mode.period * fs / 1000)); det.push([k, c]); sk += k; sp += c; skk += k * k; skp += k * c;
+        var n = det.length;
+        if (n >= 4) { var den = n * skk - sk * sk; if (den > 0) { var bb = (n * skp - sk * sp) / den, aa = (sp - bb * sk) / n; if (Math.abs(bb / b - 1) < 0.01) { a = aa; b = bb; } } }
+      }
+    }
+    var pts = det;
+    for (var it = 0; it < 3 && pts.length >= 6; it++) {
+      var fit = lsq(pts), tol = 1.5 * fs / 1000;
+      if (!isFinite(fit.b)) break; a = fit.a; b = fit.b;
+      var np = pts.filter(function (q) { return Math.abs(q[1] - (a + b * q[0])) < tol; }); if (np.length === pts.length) break; pts = np;
+    }
+    return { a: a, b: b, found: pts.length };
+  }
+  function ycc(Y, Cb, Cr, out, o) {
+    out[o] = Y + 1.402 * (Cr - 128); out[o + 1] = Y - 0.344136 * (Cb - 128) - 0.714136 * (Cr - 128); out[o + 2] = Y + 1.772 * (Cb - 128); out[o + 3] = 255;
+  }
+  function decodeImage(tr, fs, mode, a0, limit, prog) {
+    var f = tr.f, N = f.length, lum = new Float64Array(N + 1);
+    for (var n = 0; n < N; n++) lum[n + 1] = lum[n] + (f[n] - 1500) * (255 / 800);
+    var ampMin = 0; { var srt = []; for (n = 0; n < N; n += 97) srt.push(tr.amp[n]); srt.sort(function (p, q) { return p - q; }); ampMin = (srt[Math.floor(srt.length * 0.5)] || 0) * 0.25; }
+    var m = syncScore(f, tr.amp, fs, mode.sync, ampMin), bNom = mode.period * fs / 1000;
+    var fit = trackSync(m, f, fs, mode, a0, bNom, mode.rows, limit), a = fit.a, b = fit.b, scale = b / bNom, msS = fs / 1000 * scale;
+    function avg(t0, t1) { if (t1 <= t0) t1 = t0 + 1e-3; if (t0 < 0 || t1 > N) return 0; var i0 = Math.floor(t0), i1 = Math.floor(t1), f0 = t0 - i0, f1 = t1 - i1; var s = (lum[i1] + (lum[Math.min(N, i1 + 1)] - lum[i1]) * f1) - (lum[i0] + (lum[i0 + 1] - lum[i0]) * f0); return s / (t1 - t0); }
+    function scan(S, seg, W, out) { var o = S + seg[0] * msS, d = seg[1] * msS / W; for (var i = 0; i < W; i++) out[i] = avg(o + i * d, o + (i + 1) * d); }
+    var W = mode.w, H = mode.h, rgba = new Uint8ClampedArray(W * H * 4), rowsOk = 0;
+    var A1 = new Float32Array(W), A2 = new Float32Array(W), A3 = new Float32Array(W), A4 = new Float32Array(W), r36 = [];
+    for (var k = 0; k < mode.rows; k++) {
+      var S = a + b * k, x;
+      if (S + (mode.kind === 'rgb' && mode.first ? mode.seg.r[0] + mode.seg.r[1] : mode.period) * msS > N || S > limit) break;
+      if (mode.kind === 'pd') {
+        scan(S, mode.seg.y0, W, A1); scan(S, mode.seg.cr, W, A2); scan(S, mode.seg.cb, W, A3); scan(S, mode.seg.y1, W, A4);
+        for (x = 0; x < W; x++) { ycc(A1[x], A3[x], A2[x], rgba, ((2 * k) * W + x) * 4); ycc(A4[x], A3[x], A2[x], rgba, ((2 * k + 1) * W + x) * 4); }
+      } else if (mode.kind === 'r36') {
+        var Yk = new Float32Array(W), Ck = new Float32Array(W); scan(S, mode.seg.y, W, Yk); scan(S, mode.seg.c, W, Ck);
+        var sep = avg(S + mode.seg.sep[0] * msS, S + (mode.seg.sep[0] + mode.seg.sep[1]) * msS);
+        r36.push({ y: Yk, c: Ck, cr: sep < 128 });
+      } else {
+        scan(S, mode.seg.r, W, A1); scan(S, mode.seg.g, W, A2); scan(S, mode.seg.b, W, A3);
+        for (x = 0; x < W; x++) { var o = (k * W + x) * 4; rgba[o] = A1[x]; rgba[o + 1] = A2[x]; rgba[o + 2] = A3[x]; rgba[o + 3] = 255; }
+      }
+      rowsOk = k + 1;
+      if ((k & 15) === 0 && prog) prog(k / mode.rows);
+    }
+    // Robot36: cada linha traz so um componente de cor (R-Y nas pares, B-Y nas impares); usa o da linha vizinha
+    for (k = 0; k < r36.length; k++) {
+      var cur = r36[k], other = null;
+      if (k + 1 < r36.length && r36[k + 1].cr !== cur.cr) other = r36[k + 1]; else if (k > 0 && r36[k - 1].cr !== cur.cr) other = r36[k - 1];
+      var crA = cur.cr ? cur.c : other && other.c, cbA = cur.cr ? other && other.c : cur.c;
+      for (x = 0; x < W; x++) ycc(cur.y[x], cbA ? cbA[x] : 128, crA ? crA[x] : 128, rgba, (k * W + x) * 4);
+    }
+    var hOut = mode.kind === 'pd' ? 2 * rowsOk : rowsOk;
+    return { kind: 'sstv', mode: mode.name, w: W, h: H, hDecoded: hOut, rgba: rgba, info: { linhasDecodificadas: hOut, linhasDoModo: H, pulsosDeSync: fit.found, pulsosEsperados: rowsOk, erroRelogioPpm: Math.round((scale - 1) * 1e6), inicioS: +(a / fs).toFixed(2) } };
+  }
+  // sem VIS: procura a sequencia mais longa de pulsos com o periodo do modo
+  function chainSearch(f, amp, fs, mode) {
+    var srt = []; for (var n = 0; n < amp.length; n += 97) srt.push(amp[n]); srt.sort(function (p, q) { return p - q; });
+    var m = syncScore(f, amp, fs, mode.sync, (srt[Math.floor(srt.length * 0.5)] || 0) * 0.25), T = mode.period * fs / 1000, peaks = [];
+    for (n = 1; n < m.length - 1; n++) if (m[n] >= 0.75 && m[n] >= m[n - 1] && m[n] > m[n + 1]) { if (peaks.length && n - peaks[peaks.length - 1] < T * 0.5) continue; peaks.push(n); }
+    var bestLen = 0, bestStart = -1, tol = Math.max(2, 0.004 * T);
+    for (var i = 0; i < peaks.length; i++) {
+      var len = 1, last = peaks[i], j = i + 1;
+      while (j < peaks.length) { var d = peaks[j] - last, k = Math.round(d / T); if (k >= 1 && k <= 3 && Math.abs(d - k * T) < tol * k) { len++; last = peaks[j]; } else if (d > 3.5 * T) break; j++; }
+      if (len > bestLen) { bestLen = len; bestStart = peaks[i]; }
+    }
+    return { start: bestStart, len: bestLen };
+  }
+  function decodeSSTV(x, fs, opt, prog) {
+    opt = opt || {}; prog = prog || function () {};
+    if (x.length < fs * 3) throw new Error('áudio curto demais para SSTV');
+    var tr = fmTrack(x, fs, prog); prog(0.5, 'procurando cabeçalhos VIS');
+    var vis = findVIS(tr.f, fs), want = opt.mode && opt.mode !== 'auto' ? BYNAME[opt.mode] : null, images = [], skipped = [];
+    var heads = vis.filter(function (v) { return v.mode && (!want || v.mode === want.name); });
+    vis.forEach(function (v) { if (!v.mode) skipped.push('VIS ' + v.code + ' em ' + (v.edge / fs).toFixed(1) + ' s (modo não suportado)'); });
+    for (var i = 0; i < heads.length; i++) {
+      var hd = heads[i], mode = BYNAME[hd.mode], start = hd.edge + 0.3 * fs, a0 = start + mode.first * fs / 1000;
+      var limit = i + 1 < heads.length ? heads[i + 1].edge - 0.05 * fs : tr.f.length;
+      var img = decodeImage(tr, fs, mode, a0, limit, function (p) { prog(0.55 + 0.45 * (i + p) / heads.length, 'decodificando ' + mode.name + ' (' + (i + 1) + '/' + heads.length + ')'); });
+      img.info.vis = hd.code; img.info.paridade = hd.parity ? 'ok' : 'falhou'; img.info.visEmS = +(hd.edge / fs).toFixed(2);
+      images.push(img);
+    }
+    if (!images.length) {
+      var cands = want ? [want] : [BYNAME.PD120, BYNAME.Robot36, BYNAME.PD180, BYNAME.MartinM1, BYNAME.ScottieS1, BYNAME.PD90];
+      var best = null;
+      cands.forEach(function (md) { var c = chainSearch(tr.f, tr.amp, fs, md); if (c.len >= 8 && (!best || c.len / md.rows > best.c.len / best.m.rows)) best = { m: md, c: c }; });
+      if (best) {
+        var md = best.m, c0 = best.c.start;
+        var im = decodeImage(tr, fs, md, c0, tr.f.length, function (p) { prog(0.55 + 0.45 * p, 'decodificando ' + md.name + ' sem VIS'); });
+        im.info.vis = null; im.info.semVIS = true; im.info.cadeiaDePulsos = best.c.len; images.push(im);
+      }
+    }
+    prog(1, 'pronto');
+    return { kind: 'sstv', images: images, vis: vis.map(function (v) { return { t: +(v.edge / fs).toFixed(2), code: v.code, mode: v.mode, parity: v.parity }; }), skipped: skipped, duracaoS: +(x.length / fs).toFixed(1) };
+  }
+
+  return { lowpass: lowpass, mixFilter: mixFilter, decodeAPT: decodeAPT, decodeSSTV: decodeSSTV, MODES: MODES, APT: APT };
+})();
+
+// ponte para Web Worker
+if (typeof self !== 'undefined' && typeof self.postMessage === 'function' && typeof document === 'undefined' && typeof module === 'undefined') {
+  self.onmessage = function (e) {
+    var d = e.data, last = 0;
+    var prog = function (p, msg) { var now = Date.now(); if (now - last > 120 || p >= 1) { last = now; self.postMessage({ type: 'progress', p: p, msg: msg || '' }); } };
+    try {
+      var r = d.cmd === 'apt' ? DSP.decodeAPT(d.samples, d.fs, d.opt, prog) : DSP.decodeSSTV(d.samples, d.fs, d.opt, prog);
+      var transfer = [];
+      if (r.gray) transfer.push(r.gray.buffer);
+      if (r.images) r.images.forEach(function (im) { transfer.push(im.rgba.buffer); });
+      self.postMessage({ type: 'result', job: d.job, result: r }, transfer);
+    } catch (err) { self.postMessage({ type: 'error', job: d.job, msg: err && err.message ? err.message : String(err) }); }
+  };
+}
+if (typeof module !== 'undefined') module.exports = DSP;
 </script>
 <script>
 "use strict";
@@ -394,19 +935,121 @@ function slFields(type,pkt){const out={},meta={};let ok=0,miss=0;const arr=Array
     try{let v=slEval(expr,arr);if(typeof v==='number'&&!isFinite(v)){miss++;continue;}if(v===undefined){miss++;continue;}if(typeof v==='boolean')v=v?1:0;if(Array.isArray(v))v=PYS(v);out[id]=v;meta[id]={name,unit};ok++;}catch(e){miss++;}}
   return{fields:out,meta,ok,miss};}
 // quadro bruto -> melhor interpretacao para um satelite SpaceLab
-function spacelabDecode(sat,raw){const tries=[];const ng=nghamDecode(raw);
-  if(ng&&ng.payload.length)tries.push({pkt:ng.payload,via:'NGHam',ngham:ng,q:ng.crc?3:1});
-  tries.push({pkt:raw,via:'payload direto',q:2});
-  const ax=ax25Parse(raw);if(ax&&ax.info.length)tries.push({pkt:ax.info,via:'AX.25 info',q:2});
+function spacelabDecode(sat,raw){const tries=[],att=[];const ng=nghamDecode(raw);
+  if(ng&&ng.payload.length)tries.push({pkt:ng.payload,via:'NGHam',ngham:ng,q:ng.crc?3:1,off:null});
+  tries.push({pkt:raw,via:'payload direto',q:2,off:0});
+  const ax=ax25Parse(raw);if(ax&&ax.info.length)tries.push({pkt:ax.info,via:'AX.25 info',q:2,off:ax.info_off});
   let best=null;
-  for(const t of tries)for(const link of sat.links){const ty=slTypeFor(link,t.pkt);if(!ty)continue;const r=slFields(ty,t.pkt);if(!r.ok)continue;
-    let score=t.q*10+r.ok/(r.ok+r.miss)*5;
-    if(link.pn!=='CSP'){const cs=Array.from(t.pkt.slice(1,8));if(cs.length===7&&cs.every(b=>(b>=48&&b<=57)||(b>=65&&b<=90)||b===32))score+=8;else score-=6;}
-    if(!best||score>best.score)best={score,link:link.name,type:ty.name,via:t.via,ngham:t.ngham||null,fields:r.fields,meta:r.meta,ok:r.ok,miss:r.miss,net:link.pn,crc_ok:t.ngham?t.ngham.crc:null};}
-  if(!best&&ng)return{score:0,via:'NGHam',ngham:ng,type:'ID desconhecido 0x'+hex2(ng.payload[0]||0),fields:{},meta:{},ok:0,miss:0,crc_ok:ng.crc,link:''};
-  return best;}
+  for(const t of tries){let hit=false;
+    for(const link of sat.links){const ty=slTypeFor(link,t.pkt);if(!ty)continue;const r=slFields(ty,t.pkt);if(!r.ok){att.push(t.via+': tipo '+ty.name+' (enlace '+link.name+') sem nenhum campo legível');continue;}hit=true;
+      let score=t.q*10+r.ok/(r.ok+r.miss)*5,csOk=null;
+      if(link.pn!=='CSP'){const cs=Array.from(t.pkt.slice(1,8));csOk=cs.length===7&&cs.every(b=>(b>=48&&b<=57)||(b>=65&&b<=90)||b===32);score+=csOk?8:-6;}
+      att.push(t.via+': ID 0x'+hex2(t.pkt[0]||0)+' = '+ty.name+' (enlace '+link.name+'), '+r.ok+' campos'+(csOk===false?', indicativo nos bytes 1 a 7 inválido':'')+', pontuação '+score.toFixed(1));
+      if(!best||score>best.score)best={score,link:link.name,type:ty.name,via:t.via,ngham:t.ngham||null,fields:r.fields,meta:r.meta,ok:r.ok,miss:r.miss,net:link.pn,crc_ok:t.ngham?t.ngham.crc:null,typeObj:ty,pkt:t.pkt,pktOff:t.off};}
+    if(!hit)att.push(t.via+': '+(t.pkt.length?'ID 0x'+hex2(t.pkt[0])+' não existe em nenhum enlace do layout':'pacote vazio'));}
+  if(!best&&ng)return{score:0,via:'NGHam',ngham:ng,type:'ID desconhecido 0x'+hex2(ng.payload[0]||0),fields:{},meta:{},ok:0,miss:0,crc_ok:ng.crc,link:'',att};
+  if(!best)return{score:0,via:'',ngham:null,type:'',fields:{},meta:{},ok:0,miss:0,crc_ok:null,link:'',att};
+  best.att=att;return best;}
+
+// ===================== CANIVETE: operacoes e analises sobre quadros =====================
+const KNIFE=(()=>{
+  const bitsOf=a=>{const o=new Uint8Array(a.length*8);for(let i=0;i<a.length;i++)for(let k=0;k<8;k++)o[i*8+k]=(a[i]>>(7-k))&1;return o;};
+  const packMSB=b=>{const n=b.length>>3,o=new Uint8Array(n);for(let i=0;i<n;i++){let v=0;for(let k=0;k<8;k++)v=(v<<1)|b[i*8+k];o[i]=v;}return o;};
+  const revByte=v=>{let r=0;for(let k=0;k<8;k++)r=(r<<1)|((v>>k)&1);return r;};
+  // ---------- CRC generico (catalogo com valores de verificacao de "123456789") ----------
+  const reflect=(v,w)=>{let r=0;for(let i=0;i<w;i++)if(v&(2**i))r+=2**(w-1-i);return r;};
+  const CRCS=[
+    {n:'CRC-16/X-25',w:16,p:0x1021,i:0xFFFF,r:true,x:0xFFFF,chk:0x906E},
+    {n:'CRC-16/CCITT-FALSE',w:16,p:0x1021,i:0xFFFF,r:false,x:0,chk:0x29B1},
+    {n:'CRC-16/XMODEM',w:16,p:0x1021,i:0,r:false,x:0,chk:0x31C3},
+    {n:'CRC-16/KERMIT',w:16,p:0x1021,i:0,r:true,x:0,chk:0x2189},
+    {n:'CRC-16/GENIBUS',w:16,p:0x1021,i:0xFFFF,r:false,x:0xFFFF,chk:0xD64E},
+    {n:'CRC-16/ARC',w:16,p:0x8005,i:0,r:true,x:0,chk:0xBB3D},
+    {n:'CRC-16/MODBUS',w:16,p:0x8005,i:0xFFFF,r:true,x:0,chk:0x4B37},
+    {n:'CRC-16/USB',w:16,p:0x8005,i:0xFFFF,r:true,x:0xFFFF,chk:0xB4C8},
+    {n:'CRC-32/ISO-HDLC',w:32,p:0x04C11DB7,i:0xFFFFFFFF,r:true,x:0xFFFFFFFF,chk:0xCBF43926},
+    {n:'CRC-32C',w:32,p:0x1EDC6F41,i:0xFFFFFFFF,r:true,x:0xFFFFFFFF,chk:0xE3069283},
+    {n:'CRC-32/BZIP2',w:32,p:0x04C11DB7,i:0xFFFFFFFF,r:false,x:0xFFFFFFFF,chk:0xFC891918},
+    {n:'CRC-32/MPEG-2',w:32,p:0x04C11DB7,i:0xFFFFFFFF,r:false,x:0,chk:0x0376E6E7}];
+  for(const c of CRCS){c.tab=new Uint32Array(256);const rp=reflect(c.p,c.w),top=2**(c.w-1),mask=2**c.w-1;
+    for(let b=0;b<256;b++){let v;if(c.r){v=b;for(let k=0;k<8;k++)v=(v&1)?((v>>>1)^rp)>>>0:v>>>1;}else{v=(b*2**(c.w-8))>>>0;for(let k=0;k<8;k++)v=(v>=top)?(((v-top)*2)^c.p)>>>0:(v*2)>>>0;v=(v&mask)>>>0;}c.tab[b]=v>>>0;}}
+  function crcCalc(c,a,s,e){let v=c.i>>>0;const sh=c.w-8,mask=c.w===32?0xFFFFFFFF:0xFFFF;
+    if(c.r){for(let i=s;i<e;i++)v=(c.tab[(v^a[i])&255]^(v>>>8))>>>0;}
+    else{for(let i=s;i<e;i++)v=(c.tab[((v>>>sh)^a[i])&255]^((v<<8)&mask))>>>0;}
+    return ((v^c.x)&mask)>>>0;}
+  // ---------- Reed-Solomon CCSDS (255,223), base convencional ou dual ----------
+  const Tal=[0x8d,0xef,0xec,0x86,0xfa,0x99,0xaf,0x7b],Taltab=new Uint8Array(256),Tal1tab=new Uint8Array(256);
+  for(let i=0;i<256;i++){let v=0;for(let k=0;k<8;k++)if(i&(1<<k))v^=Tal[7-k];Taltab[i]=v;Tal1tab[v]=i;}
+  // ---------- HDLC: flags 7E, retirada de bit stuffing, bytes LSB primeiro, FCS CRC-16/X-25 ----------
+  function hdlcFrames(a){const b=bitsOf(a),out=[];let p=0;const flag=q=>b[q]===0&&b[q+1]&&b[q+2]&&b[q+3]&&b[q+4]&&b[q+5]&&b[q+6]&&b[q+7]===0;
+    let start=-1;while(p+8<=b.length){if(flag(p)){if(start>=0&&p-start>=48){const bits=[];let ones=0,bad=false;for(let q=start;q<p;q++){const v=b[q];if(ones===5){if(v===0){ones=0;continue;}bad=true;break;}bits.push(v);ones=v?ones+1:0;}
+          if(!bad&&bits.length>=32){const n=bits.length>>3,fr=new Uint8Array(n);for(let i=0;i<n;i++){let v=0;for(let k=0;k<8;k++)v|=bits[i*8+k]<<k;fr[i]=v;}
+            const fcs=n>=3?crcCalc(CRCS[0],fr,0,n-2):-1;out.push({bytes:fr,fcsOk:fcs===(fr[n-2]|(fr[n-1]<<8)),start});}}
+        start=p+8;p+=8;}else p++;}
+    return out;}
+  const hexOf=s=>{s=String(s||'').replace(/0x/gi,'').replace(/[^0-9a-f]/gi,'');if(s.length%2)s='0'+s;const o=new Uint8Array(s.length/2);for(let i=0;i<o.length;i++)o[i]=parseInt(s.substr(i*2,2),16);return o;};
+  const find=(a,p,from)=>{outer:for(let i=from||0;i+p.length<=a.length;i++){for(let k=0;k<p.length;k++)if(a[i+k]!==p[k])continue outer;return i;}return -1;};
+  // ---------- operacoes: cada uma devolve {out, note} ou lanca erro ----------
+  const OPS={
+    slice:{n:'recortar bytes',arg:'início:fim (ex.: 16:-2)',f:(a,arg)=>{const m=/^\s*(-?\d*)\s*(?::\s*(-?\d*))?\s*$/.exec(arg||'');if(!m)throw new Error('use início:fim');let s=m[1]===''?0:+m[1],e=m[2]===undefined||m[2]===''?a.length:+m[2];if(s<0)s+=a.length;if(e<0)e+=a.length;return{out:a.slice(Math.max(0,s),Math.min(a.length,e)),note:'bytes '+s+' a '+(e-1)};}},
+    reverse:{n:'inverter a ordem dos bytes',f:a=>({out:a.slice().reverse()})},
+    revbits:{n:'inverter a ordem dos bits de cada byte (LSB/MSB)',f:a=>({out:a.map(revByte)})},
+    not:{n:'inverter todos os bits (NOT)',f:a=>({out:a.map(v=>v^255)})},
+    xor:{n:'XOR com chave repetida',arg:'chave em hex (ex.: AA)',f:(a,arg)=>{const k=hexOf(arg);if(!k.length)throw new Error('informe a chave em hex');return{out:a.map((v,i)=>v^k[i%k.length]),note:'chave '+Array.from(k,v=>v.toString(16).padStart(2,'0')).join('')};}},
+    shift:{n:'deslocar o fluxo de bits',arg:'bits (1 a 7)',f:(a,arg)=>{const n=parseInt(arg,10);if(!(n>=1&&n<=7))throw new Error('use 1 a 7 bits');const b=bitsOf(a);return{out:packMSB(b.subarray(n)),note:n+' bits descartados no início'};}},
+    swap16:{n:'trocar bytes em pares (16 bits)',f:a=>{const o=a.slice();for(let i=0;i+1<o.length;i+=2){o[i]=a[i+1];o[i+1]=a[i];}return{out:o};}},
+    swap32:{n:'trocar bytes em grupos de 4 (32 bits)',f:a=>{const o=a.slice();for(let i=0;i+3<o.length;i+=4){o[i]=a[i+3];o[i+1]=a[i+2];o[i+2]=a[i+1];o[i+3]=a[i];}return{out:o};}},
+    nrzi:{n:'NRZI: decodificar (transição = 0)',f:a=>{const b=bitsOf(a),o=new Uint8Array(b.length);let prev=0;for(let i=0;i<b.length;i++){o[i]=b[i]===prev?1:0;prev=b[i];}return{out:packMSB(o)};}},
+    g3ruh:{n:'G3RUH: desembaralhar (1 + x^12 + x^17)',f:a=>{const s=bitsOf(a),o=new Uint8Array(s.length);for(let i=0;i<s.length;i++)o[i]=s[i]^(i>=12?s[i-12]:0)^(i>=17?s[i-17]:0);return{out:packMSB(o),note:'os primeiros 17 bits saem sem referência'};}},
+    manchester:{n:'Manchester: decodificar pares de bits',arg:'1 para invertido',f:(a,arg)=>{const b=bitsOf(a),inv=String(arg).trim()==='1',o=[];let bad=0;for(let i=0;i+1<b.length;i+=2){if(b[i]===b[i+1]){bad++;o.push(0);}else o.push(inv?b[i+1]:b[i]);}return{out:packMSB(Uint8Array.from(o)),note:bad?bad+' pares inválidos (00 ou 11): talvez deslocar 1 bit':'todos os pares válidos'};}},
+    ccsds:{n:'CCSDS: remover aleatorização (sequência PN de 255 bytes)',f:a=>({out:a.map((v,i)=>v^CCSDS[i%255])})},
+    hdlc:{n:'HDLC/AX.25: extrair quadro (flags 7E, bit stuffing, FCS)',f:a=>{const fr=hdlcFrames(a);if(!fr.length)throw new Error('nenhum quadro entre flags 7E (tente NRZI e G3RUH antes)');const ok=fr.find(x=>x.fcsOk),pick=ok||fr.reduce((m,x)=>x.bytes.length>m.bytes.length?x:m);return{out:pick.bytes.slice(0,Math.max(0,pick.bytes.length-2)),note:fr.length+' quadro(s); FCS '+(ok?'OK':'não confere')+'; '+pick.bytes.length+' B com FCS, que foi removido'};}},
+    kiss:{n:'KISS: remover enquadramento (C0, escapes DB)',f:a=>{const parts=[];let cur=[];for(const v of a){if(v===0xC0){if(cur.length)parts.push(cur);cur=[];}else cur.push(v);}if(cur.length)parts.push(cur);if(!parts.length)throw new Error('sem dados entre C0');const p=parts[0],o=[];for(let i=0;i<p.length;i++){if(p[i]===0xDB&&i+1<p.length){o.push(p[i+1]===0xDC?0xC0:p[i+1]===0xDD?0xDB:p[i+1]);i++;}else o.push(p[i]);}const cmd=o[0];return{out:Uint8Array.from(o.slice(1)),note:'byte de comando KISS 0x'+(cmd||0).toString(16).padStart(2,'0')+' removido'+(parts.length>1?'; '+parts.length+' quadros KISS, usei o primeiro':'')};}},
+    hexascii:{n:'texto hexadecimal para bytes',f:a=>{const t=new TextDecoder().decode(a),o=hexOf(t);if(!o.length)throw new Error('não há texto hexadecimal');return{out:o};}},
+    base64:{n:'texto base64 para bytes',f:a=>{const t=new TextDecoder().decode(a).replace(/[^A-Za-z0-9+/=_-]/g,'').replace(/-/g,'+').replace(/_/g,'/');const s=atob(t);return{out:Uint8Array.from(s,c=>c.charCodeAt(0))};}},
+    findcut:{n:'cortar depois de um padrão (sync word)',arg:'padrão em hex (ex.: 1ACFFC1D)',f:(a,arg)=>{const p=hexOf(arg);if(!p.length)throw new Error('informe o padrão');const i=find(a,p);if(i<0)throw new Error('padrão não encontrado');return{out:a.slice(i+p.length),note:'padrão no byte '+i};}},
+    ngham:{n:'NGHam: decodificar (size tag, CCSDS, Reed-Solomon, CRC)',f:a=>{const r=nghamDecode(a);if(!r||!r.payload.length)throw new Error('sem size tag NGHam válida');return{out:r.payload,note:'CRC '+(r.crc?'OK':'FALHOU')+', RS '+(r.rs>0?r.rs+' bytes corrigidos':r.rs===0?'sem erros':'não corrigiu')};}},
+    rs:{n:'Reed-Solomon (255,223) CCSDS: corrigir e tirar paridade',arg:'dual ou conv',f:(a,arg)=>{if(a.length<40||a.length>255)throw new Error('o bloco precisa ter de 40 a 255 bytes (223 de dados + 32 de paridade, encurtado)');const dual=!/conv/i.test(arg||'dual');const cw=dual?a.map(v=>Tal1tab[v]):a.slice();const e=RS.decode(cw,32);if(e<0)throw new Error('erros acima da capacidade (até 16 bytes)');const out=(dual?cw.map(v=>Taltab[v]):cw).slice(0,a.length-32);return{out,note:(dual?'base dual':'base convencional')+', '+e+' bytes corrigidos'};}},
+    ax25info:{n:'AX.25: pular o cabeçalho (só o campo info)',f:a=>{const ax=ax25Parse(a);if(!ax)throw new Error('cabeçalho AX.25 inválido');return{out:ax.info.slice(),note:ax.src+' > '+ax.dest+', info a partir do byte '+ax.info_off};}}
+  };
+  function apply(recipe,bytes){let cur=bytes,steps=[];for(const st of recipe){const op=OPS[st.op];if(!op){steps.push({op:st.op,err:'operação desconhecida',inLen:cur.length,outLen:cur.length});continue;}
+      try{const r=op.f(cur,st.arg);steps.push({op:st.op,arg:st.arg,inLen:cur.length,outLen:r.out.length,note:r.note||''});cur=r.out;}catch(e){steps.push({op:st.op,arg:st.arg,inLen:cur.length,outLen:cur.length,err:e.message});}}
+    return{out:cur,steps,ok:steps.every(s=>!s.err)};}
+  // ---------- analises ----------
+  function entropy(a){if(!a.length)return 0;const h=new Array(256).fill(0);for(const v of a)h[v]++;let e=0;for(const c of h)if(c){const p=c/a.length;e-=p*Math.log2(p);}return e;}
+  const MARKS=[['ASM CCSDS','1ACFFC1D'],['ASM CCSDS invertido','E53003E2'],['sync NGHam','5DE62A7E'],['sync AX100 (modo 5)','930B51DE'],['flags HDLC','7E7E'],['preâmbulo AA','AAAAAAAA'],['preâmbulo 55','55555555'],['delimitador KISS','C0']];
+  function markers(a){const out=[];for(const[n,h]of MARKS){if(h.length<4)continue;const p=hexOf(h);let i=find(a,p),c=0,first=i;while(i>=0){c++;i=find(a,p,i+1);}if(c)out.push({n,where:'byte '+first+(c>1?' (+'+(c-1)+')':''),aligned:true});}
+    if(a.length>2&&(a[0]===0xC0||a[a.length-1]===0xC0))out.push({n:'delimitador KISS (C0)',where:a[0]===0xC0?'no início':'no fim',aligned:true});
+    const b=bitsOf(a);for(const[n,h]of MARKS.filter(m=>m[1].length===8&&!/invertido|preâmbulo/.test(m[0]))){const p=bitsOf(hexOf(h)),inv=p.map(v=>v^1);for(let off=1;off<b.length-31;off++){if(off%8===0)continue;let ok=true,okI=true;for(let k=0;k<32&&(ok||okI);k++){if(b[off+k]!==p[k])ok=false;if(b[off+k]!==inv[k])okI=false;}if(ok||okI){out.push({n:n+(okI?' (bits invertidos)':''),where:'bit '+off+' (byte '+(off>>3)+' + '+(off&7)+' bits): use "deslocar '+(off&7)+'" e "recortar '+(off>>3)+':"',aligned:false});break;}}}
+    // flags HDLC: ao acaso o padrao aparece ~1 vez a cada 256 bits; quadros reais trazem varias flags coladas (8 bits de distancia)
+    let fl=0,pairs=0,last=-99;for(let off=0;off+8<=b.length;off++)if(b[off]===0&&b[off+1]&&b[off+2]&&b[off+3]&&b[off+4]&&b[off+5]&&b[off+6]&&b[off+7]===0){fl++;if(off-last===8)pairs++;last=off;}
+    const exp=Math.max(0,b.length-7)/256;
+    if((pairs>=2||fl>=Math.max(4,3*exp+3))&&!out.some(m=>m.n==='flags HDLC'))out.push({n:'padrão 01111110 desalinhado',where:fl+' ocorrências no fluxo de bits'+(pairs?', '+pairs+' em sequência':'')+' (ao acaso seriam ~'+exp.toFixed(1)+'): provável HDLC bruto. Tente a operação HDLC; se não sair, NRZI ou G3RUH antes',aligned:false});
+    return out;}
+  function callsigns(a){const out=[];for(let i=0;i+7<=a.length&&out.length<6;i++){let s='',ok=true,al=0;for(let k=0;k<6;k++){const v=a[i+k];if(v&1){ok=false;break;}const c=v>>1;if(c===32){s+=' ';continue;}if((c>=48&&c<=57)||(c>=65&&c<=90)){s+=String.fromCharCode(c);al++;}else{ok=false;break;}}
+      // o byte de SSID do AX.25 tem os dois bits reservados (6 e 5) em 1
+      if(ok&&al>=2&&s[0]!==' '&&/^[A-Z0-9]+ *$/.test(s)&&(a[i+6]&0x60)===0x60){out.push({cs:s.trim()+'-'+((a[i+6]>>1)&15),at:i});i+=6;}}return out;}
+  function crcHunt(a){const out=[];for(const t of[2,4]){const cands=CRCS.filter(c=>c.w===t*8);if(a.length<t+3)continue;const be=t===2?(a[a.length-2]<<8|a[a.length-1]):(a[a.length-4]*16777216+(a[a.length-3]<<16)+(a[a.length-2]<<8)+a[a.length-1]),le=t===2?(a[a.length-1]<<8|a[a.length-2]):(a[a.length-1]*16777216+(a[a.length-2]<<16)+(a[a.length-3]<<8)+a[a.length-4]);
+      for(let s=0;s<=Math.min(24,a.length-t-3);s++)for(const c of cands){const v=crcCalc(c,a,s,a.length-t);if(v===be>>>0)out.push(c.n+' sobre os bytes '+s+' a '+(a.length-t-1)+', gravado big-endian nos '+t+' últimos');else if(v===le>>>0)out.push(c.n+' sobre os bytes '+s+' a '+(a.length-t-1)+', gravado little-endian nos '+t+' últimos');}}
+    return out;}
+  function strings(a){const out=[];let s='',st=0;for(let i=0;i<=a.length;i++){const v=a[i];if(i<a.length&&v>=32&&v<127){if(!s)st=i;s+=String.fromCharCode(v);}else{if(s.length>=4)out.push({at:st,s});s='';}}return out.slice(0,10);}
+  function inspect(a,o){if(o<0||o>=a.length)return[];const dv=new DataView(a.buffer,a.byteOffset,a.byteLength),r=[['u8',a[o]],['i8',dv.getInt8(o)],['bits',a[o].toString(2).padStart(8,'0')],['ASCII',a[o]>=32&&a[o]<127?String.fromCharCode(a[o]):'.']];
+    const add=(n,len,fn)=>{if(o+len<=a.length)r.push([n,fn()]);};
+    add('u16 BE',2,()=>dv.getUint16(o));add('u16 LE',2,()=>dv.getUint16(o,true));add('i16 BE',2,()=>dv.getInt16(o));add('i16 LE',2,()=>dv.getInt16(o,true));
+    add('u32 BE',4,()=>dv.getUint32(o));add('u32 LE',4,()=>dv.getUint32(o,true));add('i32 BE',4,()=>dv.getInt32(o));add('i32 LE',4,()=>dv.getInt32(o,true));
+    add('f32 BE',4,()=>+dv.getFloat32(o).toPrecision(7));add('f32 LE',4,()=>+dv.getFloat32(o,true).toPrecision(7));add('f64 BE',8,()=>+dv.getFloat64(o).toPrecision(10));add('f64 LE',8,()=>+dv.getFloat64(o,true).toPrecision(10));
+    add('Unix u32 BE',4,()=>{const v=dv.getUint32(o);return v>946684800&&v<4102444800?new Date(v*1000).toISOString().slice(0,19)+'Z':'fora de 2000 a 2100';});
+    return r;}
+  function analyze(a){const e=entropy(a),maxE=Math.log2(Math.min(256,Math.max(1,a.length)));
+    // compara a quantidade de valores distintos com a esperada para bytes aleatorios do mesmo tamanho
+    const distinct=new Set(a).size,expect=256*(1-Math.pow(255/256,a.length)),ratio=expect?distinct/expect:0;
+    const kind=a.length<16?'curto demais para estatística':ratio>=0.9?'parece aleatório: ruído, dado cifrado, comprimido ou ainda embaralhado':ratio<=0.5?'muita repetição: preenchimento, texto ou estrutura simples':'estrutura binária típica de telemetria';
+    return{len:a.length,entropy:e,maxE,distinct,expect,kind,markers:markers(a),calls:callsigns(a),crc:crcHunt(a),strings:strings(a),ascii:asciiRatio(a)};}
+  return{OPS,apply,analyze,inspect,CRCS,crcCalc,hdlcFrames,Taltab,Tal1tab,hexOf};
+})();
 
 // ===================== APLICACAO =====================
+const VERSION='1.1.0';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const LAYOUTS=JSON.parse($('layouts').textContent);
@@ -420,11 +1063,14 @@ const PRESETS=[
   {name:'GRBBeta',norad:60237,prefer:['grbbeta']},
   {name:'GRBAlpha',norad:47959,prefer:['grbalpha']},
   {name:'SONATE-2',norad:59112},
-  {name:'ISS',norad:25544,prefer:['iss']}];
+  {name:'ISS',norad:25544,prefer:['iss'],note:'SSTV'},
+  {name:'NOAA 19',norad:33591,note:'APT, desativado'}];
 const LAYRX=[[/golds/i,'golds-ufsc'],[/floripa.?sat.?-?2/i,'floripasat-2a'],[/floripa.?sat/i,'floripasat-1'],[/catarina.?-?a1/i,'catarina-a1'],[/catarina.?-?a2/i,'catarina-a2'],[/catarina.?-?a3/i,'catarina-a3']];
 const RANGES=[['6h',6],['24h',24],['7d',168],['30d',720],['tudo',0]];
 const DEFAULT_PROXY='';   // URL do Worker; tambem pode vir de satellites.json (campo "proxy")
-const S={sats:[],active:null,range:0,sel:null,catalog:[],prefs:{},collected:new Set(),stations:{},fGs:'',fCc:'',siteProxy:'',flt:'ativos',cfg:{station:'',max:300,allstatus:false,auto:false,autoforce:true,token:'',proxy:'',repo:true,net:true,db:false}};
+const S={sats:[],active:null,range:0,sel:null,catalog:[],prefs:{},collected:new Set(),stations:{},fGs:'',fCc:'',siteProxy:'',flt:'ativos',
+  dlog:[],dlScope:'ativo',dlKind:'tudo',kn:{bytes:null,label:'',recipe:[],sel:0,out:null,steps:[]},sp:{obs:null,img:false,aud:false},
+  cfg:{station:'',max:300,allstatus:false,auto:false,autoforce:true,token:'',proxy:'',repo:true,net:true,db:false}};
 const PY={ready:false,p:null,py:null,names:[],ver:''};
 
 // ---------- utilidades ----------
@@ -435,15 +1081,20 @@ const normDec=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
 function fmt(v){if(typeof v!=='number')return String(v);if(Number.isInteger(v))return Math.abs(v)>=1e9?v.toExponential(3):String(v);const a=Math.abs(v);if(a>=1e6||(a>0&&a<1e-3))return v.toExponential(3);return String(+v.toPrecision(5));}
 const utc=t=>new Date(t).toISOString().replace('T',' ').slice(0,19);
 function ago(t){const s=(Date.now()-t)/1000;if(s<0)return'agora';if(s<90)return Math.round(s)+' s';if(s<5400)return Math.round(s/60)+' min';if(s<129600)return Math.round(s/3600)+' h';return Math.round(s/86400)+' d';}
-function save(){for(const s of S.sats)S.prefs[s.key]={layout:s.layout,decoder:s.decoder,custom:s.custom,pins:s.pins};try{localStorage.setItem(LS,JSON.stringify({cfg:S.cfg,range:S.range,flt:S.flt,prefs:S.prefs}));}catch(e){}}
+function save(){for(const s of S.sats)S.prefs[s.key]={layout:s.layout,decoder:s.decoder,custom:s.custom,pins:s.pins,recipe:s.recipe};try{localStorage.setItem(LS,JSON.stringify({cfg:S.cfg,range:S.range,flt:S.flt,prefs:S.prefs}));}catch(e){}}
 function activeSat(){return S.sats.find(s=>s.key===S.active)||S.sats[0]||null;}
 function layoutOf(sat){return sat.layout?LAYOUTS.find(l=>l.id===sat.layout):null;}
-function download(name,text,mime){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:mime}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);}
+function download(name,data,mime){const a=document.createElement('a');a.href=URL.createObjectURL(data instanceof Blob?data:new Blob([data],{type:mime}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800);}
+const wb=f=>f.work||f.bytes;             // bytes que os motores leem (depois da receita do canivete, se houver)
+const whex=f=>f.work?toHex(f.work):f.hex;
 
 // ---------- rede ----------
-const SATHOST=/^https:\/\/([a-z0-9-]+\.)*(satnogs\.org|fastly\.net|archive\.org)\//;
+// As APIs do SatNOGS nao mandam cabecalho CORS: passam pelo proxy. Os arquivos (S3 e fastly) mandam: vao direto.
+const PROXYHOST=/^https:\/\/([a-z0-9-]+\.)*(satnogs\.org|archive\.org)\//;
 function proxyBase(){let p=(S.cfg.proxy||'').trim()||S.siteProxy||DEFAULT_PROXY;if(!p)return'';if(p.includes('{url}')||/[?&]url=$/.test(p))return p;return p.replace(/\/+$/,'')+'/?url=';}
-async function xfetch(url,opt){const p=proxyBase();if(p&&SATHOST.test(url)){const e=encodeURIComponent(url);return fetch(p.includes('{url}')?p.replace('{url}',e):p+e,opt);}return fetch(url,opt);}
+const viaProxy=(p,url)=>{const e=encodeURIComponent(url);return p.includes('{url}')?p.replace('{url}',e):p+e;};
+async function xfetch(url,opt){const p=proxyBase();if(p&&PROXYHOST.test(url))return fetch(viaProxy(p,url),opt);
+  try{return await fetch(url,opt);}catch(e){if(p&&/^https:\/\//.test(url))return fetch(viaProxy(p,url),opt);throw e;}}
 async function jget(url,opt){const r=await xfetch(url,opt);if(!r.ok){let t='';try{t=(await r.text()).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,140);}catch(e){}throw new Error('HTTP '+r.status+(t?': '+t:''));}return r.json();}
 const why=e=>e instanceof TypeError?'bloqueado pelo navegador (CORS) ou sem rede':e.message;
 
@@ -471,10 +1122,10 @@ function search(show){const q=$('q').value.trim().toLowerCase(),box=$('res'),f=F
   box.style.display='block';box.innerHTML='<div class="dim" style="cursor:default">'+all.length+' satélites neste filtro'+(all.length>hit.length?', mostrando '+hit.length+'. Digite para refinar.':'')+'</div>'+hit.map(s=>'<div data-n="'+s.n+'"><span class="n">'+s.n+'</span><span>'+esc(s.name)+'</span><span class="dim">'+esc(s.st||'')+(s.tx!==undefined?' · '+s.tx+' tx':'')+'</span><span class="d">'+(S.collected.has(s.n)?'<span class="warn">coletor</span> ':'')+esc(s.dec.join(', '))+'</span></div>').join('');}
 
 // ---------- satelites ----------
-function mkSat(o){const k0=o.key||(o.norad?'n'+o.norad:'x-'+slug(o.name)),pf=S.prefs[k0];if(pf)o=Object.assign({},o,{layout:pf.layout,decoder:pf.decoder,custom:pf.custom,pins:pf.pins});const lay=o.layout!==undefined?o.layout:((LAYRX.find(([rx])=>rx.test(o.name||''))||[])[1]||null);
-  return{key:o.key||(o.norad?'n'+o.norad:'x-'+slug(o.name)),name:o.name||('NORAD '+o.norad),norad:o.norad||null,layout:lay,decoder:o.decoder||'auto',prefer:(o.prefer||[]).map(normDec),custom:o.custom||[],pins:o.pins||null,frames:[],keys:new Set(),auto:null,rank:null,tx:null,busy:false};}
-function addSat(o){const key=o.key||(o.norad?'n'+o.norad:'x-'+slug(o.name));let s=S.sats.find(x=>x.key===key);if(!s){s=mkSat(o);S.sats.push(s);log('satélite adicionado: '+s.name+(s.norad?' ('+s.norad+')':''));}S.active=s.key;S.sel=null;save();renderAll();loadTx(s);if(!s.frames.length&&!o.noFetch)fetchSat(s).then(renderAll);return s;}
-function removeSat(key){S.sats=S.sats.filter(s=>s.key!==key);if(S.active===key)S.active=S.sats[0]?S.sats[0].key:null;S.sel=null;save();renderAll();}
+function mkSat(o){const k0=o.key||(o.norad?'n'+o.norad:'x-'+slug(o.name)),pf=S.prefs[k0];if(pf)o=Object.assign({},o,{layout:pf.layout,decoder:pf.decoder,custom:pf.custom,pins:pf.pins,recipe:pf.recipe});const lay=o.layout!==undefined?o.layout:((LAYRX.find(([rx])=>rx.test(o.name||''))||[])[1]||null);
+  return{key:k0,name:o.name||('NORAD '+o.norad),norad:o.norad||null,layout:lay,decoder:o.decoder||'auto',prefer:(o.prefer||[]).map(normDec),custom:o.custom||[],pins:o.pins||null,recipe:o.recipe||null,frames:[],keys:new Set(),obs:new Map(),auto:null,rank:null,tx:null,busy:false};}
+function addSat(o){const key=o.key||(o.norad?'n'+o.norad:'x-'+slug(o.name));let s=S.sats.find(x=>x.key===key);if(!s){s=mkSat(o);S.sats.push(s);log('satélite adicionado: '+s.name+(s.norad?' ('+s.norad+')':''));}S.active=s.key;S.sel=null;S.sp.obs=null;$('sp-until').value='';save();renderAll();loadTx(s);if(!s.frames.length&&!s.obs.size&&!o.noFetch)fetchSat(s).then(renderAll);return s;}
+function removeSat(key){S.sats=S.sats.filter(s=>s.key!==key);if(S.active===key)S.active=S.sats[0]?S.sats[0].key:null;S.sel=null;S.sp.obs=null;save();renderAll();}
 async function loadTx(sat){if(!sat.norad||sat.tx)return;try{const j=await jget(API.db+'/transmitters/?format=json&satellite__norad_cat_id='+sat.norad);sat.tx=j.filter(t=>t.downlink_low&&(t.norad_cat_id==null||t.norad_cat_id===sat.norad)).map(t=>({d:t.description,f:t.downlink_low,m:t.mode,b:t.baud,a:t.alive}));if(sat.key===S.active)renderSatCfg();}catch(e){sat.tx=null;}}
 
 // ---------- ingestao ----------
@@ -482,17 +1133,28 @@ function addFrames(sat,items){let n=0;for(const it of items){const bytes=it.byte
     sat.frames.push({t,bytes,hex,obs:it.obs||null,gs:it.gs||null,station:it.station||'',src:it.src||'manual',dec:null});n++;}
   sat.frames.sort((a,b)=>a.t-b.t);return n;}
 function tsFromUrl(u){const m=/(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})/.exec(u);return m?Date.parse(m[1]+'T'+m[2]+':'+m[3]+':'+m[4]+'Z'):null;}
+const IMGRX=/\.(png|jpe?g|gif|webp)(\?|$)/i,SKIPRX=/\.(png|jpe?g|gif|webp|ogg|wav)(\?|$)/i;
+// produtos de uma observacao: imagens publicadas pela estacao, waterfall, audio
+function obsProduct(o){const img=[];let nfr=0;for(const d of(o.demoddata||[])){const u=d.payload_demod;if(!u)continue;if(IMGRX.test(u))img.push(u);else nfr++;}
+  return{id:o.id,t:Date.parse(o.start),gs:o.ground_station,station:o.station_name||'',mode:o.transmitter_mode||'',desc:o.transmitter_description||'',freq:o.observation_frequency||o.transmitter_downlink_low||null,wf:o.waterfall||null,audio:o.payload||null,arch:o.archive_url||null,img,nfr};}
+function addObs(sat,list){let n=0;for(const p of list){if(!p||!p.id)continue;if(!sat.obs.has(p.id))n++;sat.obs.set(p.id,Object.assign(sat.obs.get(p.id)||{},p));}return n;}
 async function fetchRepo(sat,quiet){const name=sat.norad||slug(sat.name);try{const r=await fetch('data/'+name+'.json',{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();if(j.schema!==2){log(sat.name+': data/'+name+'.json é de uma coleta antiga que misturava satélites; ignorei. Rode o coletor novo.','w');return 0;}
-    const n=addFrames(sat,(j.frames||[]).map(f=>({t:Date.parse(f.t),hex:f.hex,obs:f.obs,gs:f.gs,station:f.station,src:f.src||'repo'})));setLed('repo','ok');log(sat.name+': data/'+name+'.json, '+n+' quadros novos (coletor atualizou em '+(j.updated||'?')+')','g');return n;}
+    const n=addFrames(sat,(j.frames||[]).map(f=>({t:Date.parse(f.t),hex:f.hex,obs:f.obs,gs:f.gs,station:f.station,src:f.src||'repo'})));
+    const no=addObs(sat,(j.obs||[]).map(p=>Object.assign({},p,{t:Date.parse(p.t)})));
+    setLed('repo','ok');log(sat.name+': data/'+name+'.json, '+n+' quadros novos'+(no?', '+no+' observações com imagem, waterfall ou áudio':'')+' (coletor atualizou em '+(j.updated||'?')+')','g');return n;}
   catch(e){if(!quiet)log(sat.name+': sem data/'+name+'.json no repositório ('+e.message+')','t');return 0;}}
-async function fetchNetwork(sat,budget){if(!sat.norad){log(sat.name+': sem NORAD, pulei a Network','w');return 0;}
-  const st=String(S.cfg.station||'').trim();let end=null,pages=0,other=0;const seen=new Set(),urls=[];setLed('net','wait');
-  try{while(pages<10&&urls.length<budget){let u=API.net+'/observations/?format=json&norad_cat_id='+sat.norad+'&satellite__norad_cat_id='+sat.norad;if(!S.cfg.allstatus)u+='&status=good';if(st)u+='&ground_station='+encodeURIComponent(st);if(end)u+='&end='+encodeURIComponent(end);
+async function fetchNetwork(sat,budget,opt){opt=opt||{};if(!sat.norad){log(sat.name+': sem NORAD, pulei a Network','w');return 0;}
+  const st=String(S.cfg.station||'').trim();let end=opt.until||null,pages=0,other=0;const seen=new Set(),urls=[],maxPages=opt.pages||10;setLed('net','wait');
+  try{while(pages<maxPages&&(opt.noFrames||urls.length<budget)){let u=API.net+'/observations/?format=json&norad_cat_id='+sat.norad+'&satellite__norad_cat_id='+sat.norad;if(!S.cfg.allstatus)u+='&status=good';if(st)u+='&ground_station='+encodeURIComponent(st);if(end)u+='&end='+encodeURIComponent(end);if(opt.from)u+='&start='+encodeURIComponent(opt.from);
       const j=await jget(u);pages++;const arr=Array.isArray(j)?j:(j.results||[]);if(!arr.length)break;let oldest=null,fresh=0;
       for(const o of arr){if(seen.has(o.id))continue;seen.add(o.id);fresh++;if(!oldest||o.start<oldest)oldest=o.start;if(o.norad_cat_id!=null&&o.norad_cat_id!==sat.norad){other++;continue;}
-        for(const d of(o.demoddata||[])){const url=d.payload_demod;if(!url||/\.(png|jpe?g|gif|ogg|webp)(\?|$)/i.test(url))continue;urls.push({url,obs:o.id,gs:o.ground_station,station:o.station_name||'',t:tsFromUrl(url)||Date.parse(o.start)});}}
-      if(!fresh||!oldest||oldest===end)break;end=oldest;}
+        const p=obsProduct(o);if(p.wf||p.audio||p.img.length)addObs(sat,[p]);
+        if(opt.noFrames)continue;
+        for(const d of(o.demoddata||[])){const url=d.payload_demod;if(!url||SKIPRX.test(url))continue;urls.push({url,obs:o.id,gs:o.ground_station,station:o.station_name||'',t:tsFromUrl(url)||Date.parse(o.start)});}}
+      if(!fresh||!oldest||oldest===end)break;end=oldest;
+      if(pages>=3&&!urls.length&&!opt.noFrames)break;}
     setLed('net','ok');}catch(e){setLed('net','bad');log(sat.name+': Network API falhou: '+why(e),'e');if(!urls.length)return 0;}
+  if(opt.noFrames){const n=[...sat.obs.values()].filter(p=>opt.day&&new Date(p.t).toISOString().startsWith(opt.day)).length;log(sat.name+': '+(seen.size-other)+' observações lidas'+(opt.day?' do dia '+opt.day+', '+n+' com imagem, waterfall ou áudio':''),n?'g':'w');return 0;}
   urls.sort((a,b)=>b.t-a.t);const todo=urls.slice(0,budget).filter(u=>!sat.urls||!sat.urls.has(u.url));sat.urls=sat.urls||new Set();
   log(sat.name+': '+(seen.size-other)+' observações, '+urls.length+' quadros listados, baixando '+todo.length+(other?' ('+other+' observações de outros satélites descartadas)':''),other?'w':'');if(!todo.length)return 0;
   let ok=0,fail=0,i=0,abort=false,lastErr=null;const got=[];setLed('media','wait');
@@ -509,8 +1171,8 @@ async function fetchDb(sat,budget){if(!sat.norad)return 0;const tok=(S.cfg.token
 let fetching=false;
 async function fetchSat(sat){if(sat.busy)return;sat.busy=true;let n=0;const budget=Math.max(10,+S.cfg.max||300);
   try{if(S.cfg.repo)n+=await fetchRepo(sat,!S.collected.has(sat.norad));if(S.cfg.net)n+=await fetchNetwork(sat,budget);if(S.cfg.db)n+=await fetchDb(sat,budget);
-    if(sat.frames.length){if(S.cfg.autoforce&&!sat.layout&&sat.decoder==='auto'&&(n||!sat.auto))await forceSat(sat,true);else await decodeSat(sat);}
-    log(sat.name+': '+sat.frames.length+' quadros no total, '+n+' novos',n?'g':'');}finally{sat.busy=false;}}
+    if(sat.frames.length){if(S.cfg.autoforce&&!sat.layout&&sat.decoder==='auto'&&(n||!sat.auto))await forceSat(sat,true);else await decodeSat(sat,'busca');}
+    log(sat.name+': '+sat.frames.length+' quadros no total, '+n+' novos'+(sat.obs.size?', '+sat.obs.size+' observações com produtos':''),n?'g':'');}finally{sat.busy=false;}}
 async function fetchAll(){if(fetching)return;if(!S.sats.length){log('selecione pelo menos um satélite','w');return;}fetching=true;$('btn-fetch').disabled=true;
   try{for(const sat of S.sats){await fetchSat(sat);renderAll();}}finally{fetching=false;$('btn-fetch').disabled=false;}}
 
@@ -521,38 +1183,102 @@ function loadPy(){if(PY.p)return PY.p;setLed('py','wait');
     const py=await window.loadPyodide({indexURL:base});
     for(const[pkg,ver]of[['kaitaistruct','0.10'],['satnogs-decoders','']]){const j=await(await fetch('https://pypi.org/pypi/'+pkg+(ver?'/'+ver:'')+'/json')).json();const w=j.urls.find(u=>/none-any\.whl$/.test(u.filename));if(!w)throw new Error('sem wheel puro para '+pkg);
       py.unpackArchive(await(await fetch(w.url)).arrayBuffer(),'wheel');if(pkg==='satnogs-decoders')PY.ver=j.info.version;}
-    py.runPython(GLUE);PY.py=py;PY.fn={names:py.globals.get('ds_names'),decode:py.globals.get('ds_decode'),force:py.globals.get('ds_force')};
+    py.runPython(GLUE);PY.py=py;PY.fn={names:py.globals.get('ds_names'),decode:py.globals.get('ds_decode'),force:py.globals.get('ds_force'),tree:py.globals.get('ds_tree')};
     PY.names=JSON.parse(PY.fn.names());PY.ready=true;setLed('py','ok');log('motor oficial pronto: satnogs-decoders '+PY.ver+', '+PY.names.length+' decoders','g');renderSatCfg();})()
     .catch(e=>{PY.p=null;setLed('py','bad');log('motor oficial falhou: '+e.message,'e');throw e;});
   return PY.p;}
 function sample(frames,n){if(frames.length<=n)return frames.slice();const out=[];for(let i=0;i<n;i++)out.push(frames[Math.floor(i*(frames.length-1)/(n-1))]);return out;}
 async function forceSat(sat,quiet){if(!sat.frames.length){if(!quiet)log(sat.name+': sem quadros para forçar','w');return;}
-  if(sat.layout){await decodeSat(sat);if(!quiet)log(sat.name+': usa o motor SpaceLab ('+sat.layout+'). Para testar os oficiais, troque o layout para "nenhum".','w');return;}
-  try{await loadPy();}catch(e){await decodeSat(sat);return;}
-  const smp=sample(sat.frames,16);const rank=JSON.parse(PY.fn.force(JSON.stringify(smp.map(f=>f.hex)),JSON.stringify(sat.prefer)));sat.rank={n:smp.length,list:rank};
+  if(sat.layout){await decodeSat(sat,'força bruta');if(!quiet)log(sat.name+': usa o motor SpaceLab ('+sat.layout+'). Para testar os oficiais, troque o layout para "nenhum".','w');return;}
+  try{await loadPy();}catch(e){await decodeSat(sat,'força bruta');return;}
+  if(sat.recipe&&sat.recipe.length)for(const f of sat.frames)if(!f.work)f.work=KNIFE.apply(sat.recipe,f.bytes).out;
+  const smp=sample(sat.frames,16);const rank=JSON.parse(PY.fn.force(JSON.stringify(smp.map(whex)),JSON.stringify(sat.prefer)));sat.rank={n:smp.length,list:rank};
   let pick=rank.find(r=>r.preferred)||null;
   if(!pick&&!quiet)pick=rank.find(r=>!r.generic)||rank[0]||null;sat.auto=pick?pick.name:null;
-  if(pick&&pick.preferred)log(sat.name+': '+pick.name+' é o decoder cadastrado no SatNOGS DB e aceitou '+pick.ok+' de '+smp.length+' quadros da amostra','g');
-  else if(pick)log(sat.name+': nenhum decoder cadastrado serviu. Apliquei '+pick.name+' como PALPITE ('+pick.ok+' de '+smp.length+' quadros). Os nomes dos campos são de outro satélite e podem não significar nada aqui.','w');
-  else log(sat.name+': nenhum decoder cadastrado para este satélite decodificou os quadros. '+rank.length+' decoders de outros satélites aceitaram a amostra; clique em "forçar decodificação" para aplicar o melhor palpite.','w');
-  await decodeSat(sat);}
-function forceOne(sat,f){if(!PY.ready)return loadPy().then(()=>forceOne(sat,f));const rank=JSON.parse(PY.fn.force(JSON.stringify([f.hex]),JSON.stringify(sat.prefer)));sat.rank={n:1,list:rank,one:utc(f.t)};renderRank();log('quadro '+utc(f.t)+': '+rank.length+' decoders aceitaram');}
+  let msg;
+  if(pick&&pick.preferred)msg=pick.name+' é o decoder cadastrado no SatNOGS DB e aceitou '+pick.ok+' de '+smp.length+' quadros da amostra';
+  else if(pick)msg='nenhum decoder cadastrado serviu. Apliquei '+pick.name+' como PALPITE ('+pick.ok+' de '+smp.length+' quadros). Os nomes dos campos são de outro satélite e podem não significar nada aqui.';
+  else msg='nenhum decoder cadastrado para este satélite decodificou os quadros. '+rank.length+' decoders de outros satélites aceitaram a amostra; clique em "forçar decodificação" para aplicar o melhor palpite.';
+  log(sat.name+': '+msg,pick&&pick.preferred?'g':'w');
+  dlogPush({key:sat.key,sat:sat.name,kind:'lote',cls:'lote',text:'FORÇA BRUTA: '+PY.names.length+' decoders testados em '+smp.length+' quadros; '+rank.length+' aceitaram'+(rank.length?' (melhores: '+rank.slice(0,5).map(r=>r.name+' '+r.ok+'/'+smp.length+(r.preferred?' cadastrado':r.generic?' permissivo':'')).join(', ')+')':'')+'. '+msg});
+  await decodeSat(sat,'força bruta');}
+function forceOne(sat,f){if(!PY.ready)return loadPy().then(()=>forceOne(sat,f));const rank=JSON.parse(PY.fn.force(JSON.stringify([whex(f)]),JSON.stringify(sat.prefer)));sat.rank={n:1,list:rank,one:utc(f.t)};renderRank();log('quadro '+utc(f.t)+': '+rank.length+' decoders aceitaram');
+  dlogPush({key:sat.key,sat:sat.name,kind:'q',cls:rank.length?'parc':'falha',ft:f.t,fh:f.hex.slice(0,24),text:'FORÇA BRUTA num quadro ('+f.bytes.length+' B): '+(rank.length?rank.length+' decoders aceitaram: '+rank.slice(0,6).map(r=>r.name).join(', '):'nenhum decoder aceitou')});}
 
-// ---------- decodificacao ----------
-function decodeNative(f){const a=f.bytes,d={engine:'',label:'',fields:{},meta:{},layers:[]};const ax=ax25Parse(a);
-  if(ax){d.ax=ax;d.engine='ax';d.label='AX.25 '+ax.type;d.fields.ax25_src=ax.src;d.fields.ax25_dest=ax.dest;d.layers.push(['AX.25',ax.src+' > '+ax.dest+(ax.digis.length?' via '+ax.digis.join(','):'')+' | ctl 0x'+hex2(ax.ctl)+(ax.pid!=null?' pid 0x'+hex2(ax.pid):'')+' | tipo '+ax.type+' | info '+ax.info.length+' B']);}
-  const inner=ax?ax.info:a;if(inner.length>=4&&asciiRatio(inner)>0.9){d.text=toAscii(inner);d.layers.push(['Texto',d.text]);if(!d.engine){d.engine='ax';d.label='texto';}}
+// ---------- decodificacao com rastro ----------
+function axWhy(a){if(a.length<15)return'só '+a.length+' bytes (o cabeçalho AX.25 tem pelo menos 16)';for(let i=0;i<14;i++){if(i===6||i===13)continue;const v=a[i],c=v>>1;if(v&1)return'byte '+i+' (0x'+hex2(v)+') tem o bit de fim de endereço no meio do indicativo';if(!(c===32||(c>=48&&c<=57)||(c>=65&&c<=90)))return'byte '+i+' (0x'+hex2(v)+') não é letra nem dígito deslocado 1 bit: não é um indicativo';}return'cabeçalho incompleto ou sem campo de controle';}
+function nghamText(ng,raw){const syncAt=ng.offset>=4&&raw&&raw[ng.offset-4]===0x5D&&raw[ng.offset-3]===0xE6?ng.offset-4:-1;
+  return(syncAt>=0?'sync word no byte '+syncAt:'sem sync word, size tag lida no byte '+ng.offset)+', size tag '+ng.size_nr+' (até '+NGH.PL[ng.size_nr]+' B, '+ng.tag_errors+' bits errados), Reed-Solomon '+(ng.rs>0?ng.rs+' bytes corrigidos':ng.rs===0?'sem erros':ng.rs===-1?'erros acima da capacidade':'não aplicado'+(ng.truncated?' (quadro truncado)':''))+', CRC '+(ng.crc?'OK':'FALHOU');}
+function decodeNative(f){const a=wb(f),d={engine:'',label:'',fields:{},meta:{},layers:[],trace:[]};const ax=ax25Parse(a);
+  if(ax){d.ax=ax;d.engine='ax';d.label='AX.25 '+ax.type;d.fields.ax25_src=ax.src;d.fields.ax25_dest=ax.dest;d.layers.push(['AX.25',ax.src+' > '+ax.dest+(ax.digis.length?' via '+ax.digis.join(','):'')+' | ctl 0x'+hex2(ax.ctl)+(ax.pid!=null?' pid 0x'+hex2(ax.pid):'')+' | tipo '+ax.type+' | info '+ax.info.length+' B']);
+    d.trace.push(['AX.25','ok',ax.src+' > '+ax.dest+(ax.digis.length?' via '+ax.digis.join(','):'')+' · '+ax.type+(ax.pid!=null?' · PID 0x'+hex2(ax.pid):'')+' · info '+ax.info.length+' B']);}
+  else d.trace.push(['AX.25','falha',axWhy(a)]);
+  const inner=ax?ax.info:a,ar=inner.length?asciiRatio(inner):0;
+  if(inner.length>=4&&ar>0.9){d.text=toAscii(inner);d.layers.push(['Texto',d.text]);if(!d.engine){d.engine='ax';d.label='texto';}d.trace.push(['texto ASCII','ok',Math.round(ar*100)+'% imprimível: "'+d.text.slice(0,48)+(d.text.length>48?'...':'')+'"']);}
+  else d.trace.push(['texto ASCII','pulado',Math.round(ar*100)+'% imprimível (precisa de 90%)']);
   return d;}
 const FT={u8:[1,(v,o)=>v.getUint8(o)],i8:[1,(v,o)=>v.getInt8(o)],u16be:[2,(v,o)=>v.getUint16(o)],u16le:[2,(v,o)=>v.getUint16(o,true)],i16be:[2,(v,o)=>v.getInt16(o)],i16le:[2,(v,o)=>v.getInt16(o,true)],u32be:[4,(v,o)=>v.getUint32(o)],u32le:[4,(v,o)=>v.getUint32(o,true)],f32be:[4,(v,o)=>v.getFloat32(o)],f32le:[4,(v,o)=>v.getFloat32(o,true)]};
 function readField(b,c){const t=FT[c.type];if(!t||c.off+t[0]>b.length)return null;const v=t[1](new DataView(b.buffer,b.byteOffset,b.byteLength),c.off)*(c.scale||1);return isFinite(v)?v:null;}
-async function decodeSat(sat){const lay=layoutOf(sat);for(const f of sat.frames)f.dec=decodeNative(f);
-  if(lay){for(const f of sat.frames){const r=spacelabDecode(lay,f.bytes);if(!r)continue;f.dec.sl=r;if(r.ok){f.dec.engine='sl';f.dec.label=r.type;f.dec.fields=r.fields;f.dec.meta=r.meta;}}}
-  else if(PY.ready&&sat.decoder!=='none'){const name=sat.decoder!=='auto'?sat.decoder:sat.auto;
-    if(name&&PY.names.includes(name)){const res=JSON.parse(PY.fn.decode(name,JSON.stringify(sat.frames.map(f=>f.hex))));res.forEach((r,i)=>{if(r&&Object.keys(r).length){const d=sat.frames[i].dec;d.engine='of';d.label=name;d.fields=r;d.meta={};}});}}
-  for(const c of sat.custom)for(const f of sat.frames){const v=readField(f.bytes,c);if(v==null)continue;f.dec.fields['x_'+c.name]=v;f.dec.meta['x_'+c.name]={name:c.name+' @'+c.off+' '+c.type,unit:c.unit||''};if(!f.dec.engine){f.dec.engine='cu';f.dec.label='campo manual';}}
-}
+const OPSHORT={slice:'recorte',reverse:'inverter bytes',revbits:'inverter bits',not:'NOT',xor:'XOR',shift:'deslocar',swap16:'troca 16',swap32:'troca 32',nrzi:'NRZI',g3ruh:'G3RUH',manchester:'Manchester',ccsds:'CCSDS PN',hdlc:'HDLC',kiss:'KISS',hexascii:'hex para bytes',base64:'base64',findcut:'cortar após',ngham:'NGHam',rs:'Reed-Solomon',ax25info:'AX.25 info'};
+const recipeText=steps=>steps.map(s=>(OPSHORT[s.op]||s.op)+(s.arg?' '+s.arg:'')+(s.err?' (erro: '+s.err+')':'')).join(' > ');
+function resultText(d,sat){const nf=Object.keys(d.fields).length;
+  if(d.engine==='sl')return'SPACELAB: '+d.label+', '+nf+' campos';
+  if(d.engine==='of')return'OFICIAL: '+d.label+(isGuess(sat)?' como PALPITE (decoder de outro satélite)':sat.prefer.includes(normDec(d.label))?' (decoder cadastrado no SatNOGS DB)':' (escolhido por você)')+', '+nf+' campos';
+  if(d.engine==='ax')return'NATIVO: '+(d.ax?'cabeçalho AX.25':'texto')+', sem campos de telemetria';
+  if(d.engine==='cu')return'MANUAL: só os campos por offset';
+  return'BRUTO: nenhum motor reconheceu o quadro. Abra no canivete.';}
+async function decodeSat(sat,motivo){const t0=performance.now(),lay=layoutOf(sat),rec=sat.recipe&&sat.recipe.length?sat.recipe:null;
+  const ofName=!lay&&sat.decoder!=='none'?(sat.decoder!=='auto'?sat.decoder:sat.auto):null;
+  for(const f of sat.frames){f.work=null;f.rsteps=null;if(rec){const r=KNIFE.apply(rec,f.bytes);f.work=r.out;f.rsteps=r.steps;}f.dec=decodeNative(f);}
+  let ofRes=null,ofWhy='';
+  if(lay)ofWhy='desligado: o layout SpaceLab deste satélite tem prioridade';
+  else if(sat.decoder==='none')ofWhy='desligado no seletor "decoder oficial: nenhum"';
+  else if(!PY.ready)ofWhy='motor oficial não carregado (carrega ao forçar ou ao escolher um decoder)';
+  else if(!ofName)ofWhy=sat.rank?'nenhum decoder cadastrado no SatNOGS DB aceitou a amostra; use "forçar decodificação" para aplicar um palpite':'nenhum decoder escolhido para este satélite';
+  else if(!PY.names.includes(ofName))ofWhy='o decoder '+ofName+' não existe nesta versão do satnogs-decoders';
+  else ofRes=JSON.parse(PY.fn.decode(ofName,JSON.stringify(sat.frames.map(whex))));
+  sat.frames.forEach((f,i)=>{const d=f.dec,tr=[],a=wb(f);
+    if(rec)tr.push(['receita',f.rsteps.some(s=>s.err)?'falha':'ok',recipeText(f.rsteps)+': '+f.bytes.length+' B viraram '+a.length+' B']);
+    if(lay){const r=spacelabDecode(lay,a);d.sl=r;
+      tr.push(['NGHam',r.ngham?(r.ngham.crc?'ok':'falha'):'falha',r.ngham?nghamText(r.ngham,a):'sync word 5D E6 2A 7E não encontrada e nenhuma size tag válida no byte 0']);
+      if(r.ok){d.engine='sl';d.label=r.type;d.fields=r.fields;d.meta=r.meta;tr.push(['layout '+lay.name,'ok',r.type+' via '+r.via+' (enlace '+r.link+'), '+r.ok+' campos'+(r.miss?', '+r.miss+' além do fim do pacote':'')]);}
+      else tr.push(['layout '+lay.name,'falha',(r.att||[]).join('; ')||'nenhum tipo do layout casou']);}
+    else tr.push(['NGHam e layout','pulado','satélite sem layout SpaceLab (escolha um em SATELITES se for da família SpaceLab)']);
+    tr.push(...d.trace);
+    if(ofRes){const x=ofRes[i]||{};const nf=x.f?Object.keys(x.f).length:0;
+      if(nf){d.engine='of';d.label=ofName;d.fields=x.f;d.meta={};tr.push(['decoder oficial','ok',ofName+(isGuess(sat)?' (PALPITE)':'')+': '+nf+' campos lidos']);}
+      else tr.push(['decoder oficial','falha',ofName+': '+(x.e||'estrutura lida, mas nenhum campo')]);}
+    else tr.push(['decoder oficial','pulado',ofWhy]);
+    if(sat.custom.length){let n=0;for(const c of sat.custom){const v=readField(a,c);if(v==null)continue;n++;d.fields['x_'+c.name]=v;d.meta['x_'+c.name]={name:c.name+' @'+c.off+' '+c.type,unit:c.unit||''};}
+      if(n&&!d.engine){d.engine='cu';d.label='campo manual';}tr.push(['campos manuais',n?'ok':'falha',n+' de '+sat.custom.length+' lidos'+(n<sat.custom.length?' (offset além do fim do quadro)':'')]);}
+    tr.push(['resultado','fim',resultText(d,sat)]);d.trace=tr;});
+  dlogBatch(sat,motivo,performance.now()-t0,ofName);}
 const isDecoded=f=>f.dec&&(f.dec.engine==='sl'||f.dec.engine==='of');
 function isGuess(sat){if(!sat||sat.layout)return false;const n=sat.decoder!=='auto'?sat.decoder:sat.auto;return!!n&&n!=='none'&&!sat.prefer.includes(normDec(n));}
+
+// ---------- log de decodificacao ----------
+function dlogPush(e){e.ts=e.ts||Date.now();S.dlog.push(e);if(S.dlog.length>6000)S.dlog.splice(0,S.dlog.length-6000);}
+function frameOutcome(f){const d=f.dec,tr=d.trace,nf=Object.keys(d.fields).length;
+  if(d.engine==='sl'||d.engine==='of')return{cls:'ok',text:(d.engine==='sl'?'SPACELAB ':'OFICIAL ')+d.label+' · '+nf+' campos'};
+  const fail=tr.find(x=>x[1]==='falha'&&/^(layout|decoder oficial|receita)/.test(x[0]))||tr.find(x=>x[1]==='falha');
+  if(d.engine)return{cls:'parc',text:(d.engine==='cu'?'MANUAL':'NATIVO '+(d.ax?d.ax.src+' > '+d.ax.dest:'texto'))+(fail?' · '+fail[0]+': '+fail[2]:'')};
+  return{cls:'falha',text:'BRUTO'+(fail?' · '+fail[0]+': '+fail[2]:'')};}
+function dlogBatch(sat,motivo,ms,ofName){const ts=Date.now(),cnt={sl:0,of:0,ax:0,cu:0,'':0},errs={};let changed=0;
+  for(const f of sat.frames){const d=f.dec;cnt[d.engine||'']++;const ofl=d.trace.find(x=>x[0]==='decoder oficial'&&x[1]==='falha');if(ofl){const k=(ofl[2].split(': ')[1]||'sem campos').split(':')[0];errs[k]=(errs[k]||0)+1;}}
+  const parts=[['SPACELAB','sl'],['OFICIAL','of'],['NATIVO','ax'],['MANUAL','cu'],['BRUTO','']].filter(p=>cnt[p[1]]).map(p=>p[0]+' '+cnt[p[1]]);
+  dlogPush({ts,key:sat.key,sat:sat.name,kind:'lote',cls:'lote',text:'LOTE '+sat.frames.length+' quadros em '+Math.round(ms)+' ms'+(motivo?' ('+motivo+')':'')+': '+(parts.join(' · ')||'nenhum')+(ofName?' · decoder oficial '+ofName:'')+(sat.recipe&&sat.recipe.length?' · receita '+recipeText(sat.recipe.map(s=>({op:s.op,arg:s.arg}))):'')+(Object.keys(errs).length?' · falhas do oficial: '+Object.entries(errs).map(([k,v])=>k+' '+v).join(', '):'')});
+  for(const f of sat.frames){const o=frameOutcome(f),sig=o.cls+'|'+o.text;if(f._sig===sig)continue;f._sig=sig;changed++;
+    dlogPush({ts,key:sat.key,sat:sat.name,kind:'q',cls:o.cls,ft:f.t,fh:f.hex.slice(0,24),text:'quadro '+utc(f.t)+' · '+f.bytes.length+' B · '+o.text});}
+  if(!changed&&sat.frames.length)S.dlog[S.dlog.length-1].text+=' · nenhum quadro mudou de resultado';
+  if(typeof renderDlog==='function'&&$('dlog'))renderDlog();}
+function dlogLines(){const s=activeSat();return S.dlog.filter(e=>(S.dlScope==='todos'||!s||e.key===s.key)&&(S.dlKind==='tudo'||(S.dlKind==='falhas'&&(e.cls==='falha'||e.cls==='bad'))||(S.dlKind==='lotes'&&e.kind!=='q')));}
+const DLTAG={lote:'LOTE ',ok:'  ok ',parc:' parc',falha:'falha',esp:'IMAGEM',bad:'falha'};
+function renderDlog(){const el=$('dlog');if(!el)return;$('dl-flt').innerHTML=[['ativo','satélite ativo'],['todos','todos']].map(o=>'<span class="chip'+(S.dlScope===o[0]?' on':'')+'" data-ds="'+o[0]+'">'+o[1]+'</span>').join('')+' '+[['tudo','tudo'],['falhas','só falhas'],['lotes','só resumos']].map(o=>'<span class="chip'+(S.dlKind===o[0]?' on':'')+'" data-dk="'+o[0]+'">'+o[1]+'</span>').join('');
+  const L=dlogLines(),show=L.slice(-700),atBottom=el.scrollHeight-el.scrollTop-el.clientHeight<30;
+  el.innerHTML=show.map(e=>'<div class="'+e.cls+'"'+(e.ft?' data-k="'+esc(e.key)+'" data-t="'+e.ft+'" data-h="'+e.fh+'"':'')+'><span class="t">'+new Date(e.ts).toISOString().slice(11,19)+'</span> <span class="sn">'+esc(e.sat.slice(0,14).padEnd(14,' '))+'</span> <b>'+(DLTAG[e.cls]||e.cls)+'</b> '+esc(e.text)+'</div>').join('')||'<div class="t">nada registrado ainda: busque ou cole quadros</div>';
+  $('dl-sub').textContent=L.length+' linhas'+(L.length>show.length?', mostrando as últimas '+show.length:'')+' · clique numa linha de quadro para abri-lo';
+  if(atBottom||!el._init){el.scrollTop=el.scrollHeight;el._init=1;}}
+function exportDlog(){const L=dlogLines();download('log-decodificacao-'+new Date().toISOString().slice(0,19).replace(/:/g,'')+'.txt',L.map(e=>new Date(e.ts).toISOString()+'\t'+e.sat+'\t'+(DLTAG[e.cls]||e.cls).trim()+'\t'+e.text).join('\n'),'text/plain');}
 
 // ---------- graficos ----------
 function setupCanvas(cv){const dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);}const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);g.font='10px ui-monospace,Menlo,Consolas,monospace';return{g,w,h};}
@@ -594,7 +1320,7 @@ function renderGsFilter(){const s=activeSat(),el=$('gsflt');if(!s||!s.frames.len
     '<label>estação terrena <select id="f-gs"><option value="">todas ('+gs.length+')</option>'+gs.map(([k,g])=>'<option value="'+esc(k)+'"'+(S.fGs===k?' selected':'')+'>'+esc(k)+' '+esc(g.name.slice(0,28))+(g.cc?' '+flag(g.cc)+' '+g.cc:'')+' ('+g.n+')</option>').join('')+'</select></label>'+
     ((S.fCc||S.fGs)?'<button class="btn sm" id="f-clear">limpar filtro</button>':'')+(known?'':'<span class="dim">países indisponíveis até o coletor gravar data/stations.json</span>');}
 function renderSats(){$('presets').innerHTML=PRESETS.map((p,i)=>'<span class="chip" data-p="'+i+'">'+esc(p.name)+(p.note?' <span class="dim">'+esc(p.note)+'</span>':'')+'</span>').join('');
-  $('sel').innerHTML=S.sats.length?S.sats.map(s=>'<span class="chip'+(s.key===S.active?' on':'')+'" data-k="'+esc(s.key)+'">'+esc(s.name)+' <span class="dim">'+(s.norad||'s/ NORAD')+' · '+s.frames.length+'</span><span class="x" data-x="'+esc(s.key)+'">x</span></span>').join(''):'<span class="dim">nenhum satélite. Use a busca ou os atalhos.</span>';
+  $('sel').innerHTML=S.sats.length?S.sats.map(s=>'<span class="chip'+(s.key===S.active?' on':'')+'" data-k="'+esc(s.key)+'">'+esc(s.name)+' <span class="dim">'+(s.norad||'s/ NORAD')+' · '+s.frames.length+(s.recipe&&s.recipe.length?' · receita':'')+'</span><span class="x" data-x="'+esc(s.key)+'">x</span></span>').join(''):'<span class="dim">nenhum satélite. Use a busca ou os atalhos.</span>';
   renderSatCfg();}
 function renderSatCfg(){const s=activeSat(),el=$('satcfg');if(!s){el.innerHTML='';return;}
   const decs=PY.ready?PY.names:Array.from(new Set(s.prefer.map(p=>p.charAt(0).toUpperCase()+p.slice(1)).concat(s.decoder!=='auto'&&s.decoder!=='none'?[s.decoder]:[])));
@@ -603,8 +1329,9 @@ function renderSatCfg(){const s=activeSat(),el=$('satcfg');if(!s){el.innerHTML='
     '<label>decoder oficial <select id="sc-dec"'+(s.layout?' disabled':'')+'><option value="auto">auto'+(s.auto?' ('+esc(s.auto)+')':'')+'</option><option value="none"'+(s.decoder==='none'?' selected':'')+'>nenhum</option>'+decs.map(n=>'<option'+(s.decoder===n?' selected':'')+'>'+esc(n)+'</option>').join('')+'</select></label></div>';
   const lay=layoutOf(s);
   if(lay)h+='<div style="margin-top:8px" class="dim">enlaces do layout: '+lay.links.map(l=>esc(l.name)+' '+(l.freq?(l.freq/1e6).toFixed(3)+' MHz ':'')+esc(l.mod)+' '+l.baud+' bd, '+esc(l.pl)+'/'+esc(l.pn)+', '+l.types.length+' tipos').join(' | ')+'</div>';
+  if(s.recipe&&s.recipe.length)h+='<div style="margin-top:8px" class="warn">receita do canivete aplicada antes dos motores: '+esc(recipeText(s.recipe))+'</div>';
   if(s.tx&&s.tx.length)h+='<div class="scroll" style="max-height:120px;margin-top:8px"><table><tr><th>transmissor (SatNOGS DB)</th><th>MHz</th><th>modo</th><th>baud</th><th></th></tr>'+s.tx.map(t=>'<tr><td class="w">'+esc(t.d||'')+'</td><td>'+(t.f/1e6).toFixed(3)+'</td><td>'+esc(t.m||'')+'</td><td>'+(t.b||'')+'</td><td class="'+(t.a?'ok':'dim')+'">'+(t.a?'ativo':'inativo')+'</td></tr>').join('')+'</table></div>';
-  else if(!s.norad)h+='<div class="amb" style="margin-top:8px">Sem NORAD: use quadros colados, arquivos ou data/'+esc(slug(s.name))+'.json. Quando o SatNOGS DB criar a entrada (ID temporário 99xxx), preencha acima.</div>';
+  else if(!s.norad)h+='<div class="warn" style="margin-top:8px">Sem NORAD: use quadros colados, arquivos ou data/'+esc(slug(s.name))+'.json. Quando o SatNOGS DB criar a entrada (ID temporário 99xxx), preencha acima.</div>';
   el.innerHTML=h;}
 function renderTiles(){renderGsFilter();const s=activeSat(),el=$('tiles');if(!s){el.innerHTML='';$('st-sub').textContent='';return;}
   const fr=viewFrames(s),dec=fr.filter(isDecoded).length,gs=new Set(fr.map(f=>f.gs||f.station).filter(Boolean)).size,last=fr[fr.length-1];
@@ -612,6 +1339,7 @@ function renderTiles(){renderGsFilter();const s=activeSat(),el=$('tiles');if(!s)
   const sl=fr.filter(f=>f.dec&&f.dec.sl&&f.dec.sl.ngham),crc=sl.filter(f=>f.dec.sl.crc_ok).length,fixed=sl.reduce((a,f)=>a+Math.max(0,f.dec.sl.ngham.rs||0),0);
   const T=[['quadros',fr.length,S.range?'na janela':'no total','SATNOGS'],['decodificados',fr.length?Math.round(dec/fr.length*100)+'%':'0%',dec+' de '+fr.length,'MOTOR'],['estações',gs,(()=>{const n=new Set(fr.map(ccOf).filter(Boolean)).size;return n?'em '+n+(n>1?' países':' país'):'receptoras distintas';})(),'SATNOGS'],['último quadro',last?'há '+ago(last.t):'nenhum',last?utc(last.t)+' UTC':'busque ou cole quadros','UTC'],['motor',eng,s.layout?'NGHam + layout '+s.layout:(isGuess(s)?'PALPITE: decoder de outro satélite':PY.ready?'satnogs-decoders '+PY.ver:'AX.25 / CSP / texto'),'DECODE']];
   if(s.layout)T.push(['CRC NGHam',sl.length?Math.round(crc/sl.length*100)+'%':'n/d',sl.length?crc+' de '+sl.length+', '+fixed+' bytes corrigidos por RS':'nenhum quadro NGHam','FEC']);
+  if(s.obs.size){const im=[...s.obs.values()].filter(p=>p.img&&p.img.length).length;T.push(['observações',s.obs.size,im+' com imagem da estação','DECODE ESP']);}
   el.innerHTML=T.map(t=>'<div class="tile"><span class="s">'+t[3]+'</span><div class="l">'+t[0]+'</div><div class="v" title="'+esc(t[1])+'">'+esc(t[1])+'</div><div class="u">'+esc(t[2])+'</div></div>').join('');
   $('st-sub').textContent=s.name+(s.norad?' · NORAD '+s.norad:'')+(s.busy?' · buscando...':'');$('sim-banner').style.display=s.frames.some(f=>f.src==='sim')?'block':'none';}
 function numericFields(fr){const M=new Map();for(const f of fr){if(!f.dec)continue;for(const k in f.dec.fields){const v=f.dec.fields[k];if(typeof v!=='number')continue;let e=M.get(k);if(!e){e={k,pts:[],set:new Set(),meta:f.dec.meta[k]||null};M.set(k,e);}e.pts.push({t:f.t,v});if(e.set.size<6)e.set.add(v);if(!e.meta&&f.dec.meta[k])e.meta=f.dec.meta[k];}}return Array.from(M.values());}
@@ -625,43 +1353,153 @@ function renderCharts(){const s=activeSat();$('ranges').innerHTML=RANGES.map(r=>
   const show=all.filter(e=>pins.has(e.k));
   pn.innerHTML=show.map((e,i)=>{const last=e.pts[e.pts.length-1].v,u=e.meta&&e.meta.unit?' '+e.meta.unit:'';let mn=Infinity,mx=-Infinity;for(const p of e.pts){if(p.v<mn)mn=p.v;if(p.v>mx)mx=p.v;}
     return'<div class="gp"><div class="h"><b title="'+esc(e.k)+'">'+esc(e.meta&&e.meta.name?e.meta.name:e.k)+'</b><span class="dim">'+esc(e.meta&&e.meta.name?e.k:'')+'</span><span class="last">'+esc(fmt(last)+u)+'</span></div><canvas data-i="'+i+'"></canvas><div class="f"><span>min '+esc(fmt(mn))+'</span><span>n '+e.pts.length+'</span><span>max '+esc(fmt(mx))+'</span></div></div>';}).join('')||
-    '<div class="pn dim" style="grid-column:1/-1">'+(fr.length?'Há quadros, mas nenhum campo numérico. Tente "forçar decodificação" ou o laboratório de bytes.':'Sem dados. Clique em [ BUSCAR E DECODIFICAR ], cole quadros ou gere quadros simulados.')+'</div>';
+    '<div class="pn dim" style="grid-column:1/-1">'+(fr.length?'Há quadros, mas nenhum campo numérico. Tente "forçar decodificação", o canivete ou o laboratório de bytes.':'Sem dados. Clique em [ BUSCAR E DECODIFICAR ], cole quadros ou gere quadros simulados.')+'</div>';
   pn.querySelectorAll('canvas').forEach(cv=>{const e=show[+cv.dataset.i];plot(cv,e.pts,t0,t1,COLORS[+cv.dataset.i%COLORS.length]);});}
 const ENG={sl:['sl','SPACELAB'],of:['of','OFICIAL'],ax:['ax','NATIVO'],cu:['cu','MANUAL']};
 function summary(f){const d=f.dec;if(!d)return'';if(d.engine==='sl'||d.engine==='of'){const ks=Object.keys(d.fields).filter(k=>!/^(pkt_id|ax25_|ctl|pid)/.test(k)).slice(0,4);return d.label+': '+ks.map(k=>k+'='+fmt(d.fields[k])).join(' ');}
-  if(d.text)return d.text.slice(0,70);if(d.ax)return d.ax.src+' > '+d.ax.dest+' '+toAscii(d.ax.info.slice(0,28));if(d.sl&&d.sl.ngham)return'NGHam '+(d.sl.crc_ok?'CRC ok':'CRC falhou')+', '+d.sl.type;return toHex(f.bytes.slice(0,20))+'...';}
+  if(d.text)return d.text.slice(0,70);if(d.ax)return d.ax.src+' > '+d.ax.dest+' '+toAscii(d.ax.info.slice(0,28));if(d.sl&&d.sl.ngham)return'NGHam '+(d.sl.crc_ok?'CRC ok':'CRC falhou')+', '+d.sl.type;return toHex(wb(f).slice(0,20))+'...';}
 function renderFrames(){const s=activeSat(),el=$('frames');if(!s){el.innerHTML='';return;}const fr=viewFrames(s),show=fr.slice(-300).reverse();
   $('fr-sub').textContent=fr.length?'mostrando '+show.length+' de '+fr.length+', mais recentes primeiro':'';
   const guess=isGuess(s);el.innerHTML='<table><tr><th>UTC</th><th>origem</th><th>estação</th><th>B</th><th>motor</th><th>resumo</th></tr>'+show.map(f=>{const e=guess&&f.dec&&f.dec.engine==='of'?['cu','PALPITE']:(ENG[f.dec&&f.dec.engine]||['','BRUTO']);
     return'<tr class="cl'+(S.sel===f?' sel':'')+'" data-t="'+f.t+'" data-h="'+f.hex.slice(0,24)+'"><td>'+utc(f.t)+'</td><td><span class="tag'+(f.src==='sim'?' sim':'')+'">'+esc(f.src.toUpperCase())+'</span>'+(f.obs?' <a href="https://network.satnogs.org/observations/'+encodeURIComponent(f.obs)+'/" target="_blank" rel="noopener">'+esc(f.obs)+'</a>':'')+'</td><td>'+(ccOf(f)?'<span title="'+esc(ccName(ccOf(f)))+'">'+flag(ccOf(f))+' '+ccOf(f)+'</span> ':'')+esc(f.gs||'')+' <span class="dim">'+esc((f.station||'').slice(0,18))+'</span></td><td>'+f.bytes.length+'</td><td><span class="tag '+e[0]+'">'+e[1]+'</span></td><td class="w">'+esc(summary(f))+'</td></tr>';}).join('')+'</table>'+(show.length?'':'<div class="dim" style="padding:12px">sem quadros</div>');}
-function hexdump(a){let o='';for(let i=0;i<a.length;i+=16){const row=a.slice(i,i+16);o+='<span class="o">'+i.toString(16).padStart(4,'0')+'</span>  '+Array.from(row,hex2).join(' ').padEnd(47,' ')+'  <span class="a">'+esc(toAscii(row))+'</span>\n';}return o;}
-function renderDetail(){const s=activeSat(),el=$('detail');if(S.sel&&(!s||!s.frames.includes(S.sel)))S.sel=null;const f=S.sel;if(!s||!f){el.innerHTML='<span class="dim">Clique em um quadro para abrir o hexdump, as camadas detectadas e os campos.</span>';return;}
-  const d=f.dec||decodeNative(f),e=ENG[d.engine]||['','BRUTO'];let h='<div class="row"><b>'+utc(f.t)+' UTC</b><span class="tag '+e[0]+'">'+e[1]+'</span><span class="dim">'+f.bytes.length+' bytes'+(d.label?' · '+esc(d.label):'')+'</span><span style="flex:1"></span><button class="btn sm" id="d-force">forçar todos neste quadro</button><button class="btn sm" id="d-copy">copiar hex</button></div>';
-  const L=d.layers.slice();const ng=d.sl&&d.sl.ngham?d.sl.ngham:nghamDecode(f.bytes);
-  if(ng)L.push(['NGHam','size tag '+ng.size_nr+' (até '+NGH.PL[ng.size_nr]+' B), offset '+ng.offset+', '+ng.tag_errors+' bits errados na tag | CRC '+(ng.crc?'OK':'FALHOU')+' | Reed-Solomon: '+(ng.rs>0?ng.rs+' bytes corrigidos':ng.rs===0?'sem erros':ng.rs===-1?'acima da capacidade':'não aplicado'+(ng.truncated?' (quadro truncado)':''))+' | payload '+ng.payload.length+' B']);
-  if(d.sl&&d.sl.ok)L.push(['SpaceLab',d.sl.type+' via '+d.sl.via+' ('+esc(d.sl.link)+', '+d.sl.net+'), '+d.sl.ok+' campos'+(d.sl.miss?', '+d.sl.miss+' fora do quadro':'')]);
-  const inner=d.ax?d.ax.info:f.bytes,csp=cspParse(inner);if(csp&&!d.text&&d.engine!=='sl')L.push(['CSP (hipótese)','prio '+csp.prio+' | '+csp.src+':'+csp.sport+' > '+csp.dst+':'+csp.dport+' | flags 0x'+hex2(csp.flags)+(csp.crc?' | CRC32C '+(csp.crc_ok?'OK':'não confere'):'')]);
-  if(L.length)h+='<div class="kv" style="margin:8px 0">'+L.map(l=>'<span>'+l[0]+'</span><span>'+esc(l[1])+'</span>').join('')+'</div>';
-  const ks=Object.keys(d.fields);if(ks.length)h+='<div class="scroll" style="max-height:240px;margin:8px 0"><table><tr><th>campo</th><th>valor</th><th>un.</th><th>descrição</th></tr>'+ks.map(k=>'<tr><td>'+esc(k)+'</td><td class="amb">'+esc(fmt(d.fields[k]))+'</td><td>'+esc(d.meta[k]&&d.meta[k].unit||'')+'</td><td class="w dim">'+esc(d.meta[k]&&d.meta[k].name||'')+'</td></tr>').join('')+'</table></div>';
-  h+='<pre class="hex">'+hexdump(f.bytes)+'</pre>';el.innerHTML=h;
-  $('d-force').onclick=()=>forceOne(s,f);$('d-copy').onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(f.hex);log('hex copiado');};}
+// hexdump com faixas coloridas (campos) e bytes clicaveis (canivete)
+function hexRich(a,ranges,opt){opt=opt||{};const cls=new Int8Array(a.length).fill(-1),tip=new Array(a.length);(ranges||[]).forEach((r,ri)=>{for(let i=Math.max(0,r.a);i<Math.min(a.length,r.b);i++){cls[i]=ri%6;tip[i]=r.t;}});
+  let o='';for(let i=0;i<a.length;i+=16){o+='<span class="o">'+i.toString(16).padStart(4,'0')+'</span>  ';
+    for(let j=0;j<16;j++){const k=i+j;if(k>=a.length){o+='   ';continue;}const c=(cls[k]>=0?'h'+cls[k]:'')+(opt.sel===k?' bsel':'');o+='<span'+(c?' class="'+c+'"':'')+(tip[k]?' title="'+esc(tip[k])+'"':'')+(opt.click?' data-o="'+k+'"':'')+'>'+hex2(a[k])+'</span>'+(j===7?'  ':' ');}
+    o+=' <span class="a">'+esc(toAscii(a.slice(i,i+16)))+'</span>\n';}return o;}
+const legend=ranges=>'<div class="legend">'+ranges.slice(0,40).map((r,i)=>'<span class="h'+(i%6)+'">'+esc(r.t)+'</span>').join('')+(ranges.length>40?'<span class="dim">+'+(ranges.length-40)+'</span>':'')+'</div>';
+function treeText(v,ind){ind=ind||'';if(v===null||typeof v!=='object')return String(v);const sub=(x,k)=>'\n'+ind+k+(x&&typeof x==='object'?treeText(x,ind+'  '):' '+String(x));return Array.isArray(v)?v.map((x,i)=>sub(x,'['+i+']')).join(''):Object.entries(v).map(([k,x])=>sub(x,k+':')).join('');}
+const TR_ICON={ok:['✓','ok'],falha:['✗','bad'],pulado:['·','dim'],fim:['▸','warn']};
+const traceHtml=tr=>'<div class="trace">'+tr.map(([k,s,t])=>{const ic=TR_ICON[s]||['·','dim'];return'<div><span class="'+ic[1]+'">'+ic[0]+'</span><b>'+esc(k)+'</b><span'+(s==='fim'?' class="warn"':'')+'>'+esc(t)+'</span></div>';}).join('')+'</div>';
+function axRanges(ax){const r=[{a:0,b:7,t:'destino '+ax.dest},{a:7,b:14,t:'origem '+ax.src}];let o=14;ax.digis.forEach(d=>{r.push({a:o,b:o+7,t:'repetidor '+d});o+=7;});r.push({a:o,b:ax.info_off,t:'controle'+(ax.pid!=null?' e PID':'')});r.push({a:ax.info_off,b:1e9,t:'info'});return r;}
+function renderDetail(){const s=activeSat(),el=$('detail');if(S.sel&&(!s||!s.frames.includes(S.sel)))S.sel=null;const f=S.sel;if(!s||!f){el.innerHTML='<span class="dim">Clique em um quadro para ver como ele foi decodificado, o hexdump e os campos.</span>';return;}
+  const d=f.dec||decodeNative(f),e=ENG[d.engine]||['','BRUTO'],ofN=!s.layout&&(s.decoder!=='auto'?s.decoder:s.auto);
+  let h='<div class="row"><b>'+utc(f.t)+' UTC</b><span class="tag '+e[0]+'">'+e[1]+'</span><span class="dim">'+f.bytes.length+' bytes'+(d.label?' · '+esc(d.label):'')+'</span><span style="flex:1"></span><button class="btn sm" id="d-knife">abrir no canivete</button>'+(ofN&&ofN!=='none'?'<button class="btn sm" id="d-tree">árvore Kaitai</button>':'')+'<button class="btn sm" id="d-force">forçar todos neste quadro</button><button class="btn sm" id="d-copy">copiar hex</button></div>';
+  h+='<div class="sub">como foi decodificado</div>'+(d.trace&&d.trace.length?traceHtml(d.trace):'<div class="dim">ainda não passou pela cascata</div>');
+  const L=d.layers.slice();const ng=d.sl&&d.sl.ngham?d.sl.ngham:nghamDecode(wb(f));
+  if(ng&&!s.layout)L.push(['NGHam (só informativo)',nghamText(ng,wb(f))]);
+  const inner=d.ax?d.ax.info:wb(f),csp=cspParse(inner);if(csp&&!d.text&&d.engine!=='sl')L.push(['CSP (hipótese)','prio '+csp.prio+' | '+csp.src+':'+csp.sport+' > '+csp.dst+':'+csp.dport+' | flags 0x'+hex2(csp.flags)+(csp.crc?' | CRC32C '+(csp.crc_ok?'OK':'não confere'):'')]);
+  if(L.length)h+='<div class="sub">camadas</div><div class="kv">'+L.map(l=>'<span>'+l[0]+'</span><span>'+esc(l[1])+'</span>').join('')+'</div>';
+  const ks=Object.keys(d.fields);if(ks.length)h+='<div class="sub">campos</div><div class="scroll" style="max-height:240px"><table><tr><th>campo</th><th>valor</th><th>un.</th><th>descrição</th></tr>'+ks.map(k=>'<tr><td>'+esc(k)+'</td><td class="amb">'+esc(fmt(d.fields[k]))+'</td><td>'+esc(d.meta[k]&&d.meta[k].unit||'')+'</td><td class="w dim">'+esc(d.meta[k]&&d.meta[k].name||'')+'</td></tr>').join('')+'</table></div>';
+  if(d.engine==='sl'&&d.sl&&d.sl.typeObj){const rg=d.sl.typeObj.f.map(x=>({a:x[2],b:x[3]+1,t:x[1]+(x[2]===x[3]?' (byte '+x[2]+')':' (bytes '+x[2]+' a '+x[3]+')')}));
+    h+='<div class="sub">pacote lido pelo layout ('+esc(d.sl.via)+', '+d.sl.pkt.length+' B): cada cor é um campo</div><pre class="hex">'+hexRich(d.sl.pkt,rg)+'</pre>'+legend(rg);}
+  if(f.work)h+='<div class="sub">depois da receita do canivete ('+f.work.length+' B)</div><pre class="hex">'+(d.ax?hexRich(f.work,axRanges(d.ax)):hexRich(f.work))+'</pre>';
+  const axR=!f.work&&d.ax?axRanges(d.ax):null;
+  h+='<div class="sub">quadro bruto como chegou ('+f.bytes.length+' B)</div><pre class="hex">'+hexRich(f.bytes,axR)+'</pre>'+(axR?legend(axR):'');
+  h+='<div id="d-treebox"></div>';el.innerHTML=h;
+  $('d-force').onclick=()=>forceOne(s,f);$('d-copy').onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(f.hex);log('hex copiado');};
+  $('d-knife').onclick=()=>{knifeLoad(f.bytes,'quadro '+utc(f.t)+' de '+s.name);$('knife').scrollIntoView({behavior:'smooth',block:'start'});};
+  if($('d-tree'))$('d-tree').onclick=async()=>{const box=$('d-treebox');box.innerHTML='<div class="dim">montando a árvore...</div>';try{await loadPy();const r=JSON.parse(PY.fn.tree(ofN,whex(f)));box.innerHTML='<div class="sub">árvore que o Kaitai ('+esc(ofN)+') montou ao ler o quadro</div>'+(r.ok?'<pre class="tree">'+esc(treeText(r.tree).trim())+'</pre>':'<div class="bad">'+esc(r.e)+'</div>');}catch(e){box.innerHTML='<div class="bad">'+esc(e.message)+'</div>';}};}
 function renderRank(){const s=activeSat(),el=$('rank');if(!s||!s.rank){el.innerHTML='<span class="dim">Use "forçar decodificação"'+(s&&s.layout?' (com layout SpaceLab ativo os oficiais ficam desligados)':'')+'.</span>';return;}
   const cur=s.decoder!=='auto'?s.decoder:s.auto;
   el.innerHTML='<table><tr><th>decoder</th><th>aceitou</th><th>campos</th><th>tipo</th><th></th></tr>'+s.rank.list.map(r=>'<tr><td'+(r.name===cur?' class="amb"':'')+'>'+esc(r.name)+'</td><td>'+r.ok+'/'+s.rank.n+'</td><td>'+r.fields+'</td><td class="'+(r.preferred?'ok':r.generic?'dim':'cy')+'">'+(r.preferred?'cadastrado no DB':r.generic?'permissivo':'estrito')+'</td><td><button class="btn sm" data-use="'+esc(r.name)+'">usar</button></td></tr>').join('')+'</table>'+(s.rank.list.length?'':'<div class="dim">nenhum decoder aceitou a amostra</div>')+(s.rank.one?'<div class="dim">ranking de um único quadro: '+esc(s.rank.one)+'</div>':'');}
 function renderCustom(){const s=activeSat(),el=$('custom');el.innerHTML=s&&s.custom.length?'<div class="chips" style="margin-bottom:6px">'+s.custom.map((c,i)=>'<span class="chip">'+esc(c.name)+' @'+c.off+' '+c.type+(c.scale&&c.scale!==1?' x'+c.scale:'')+'<span class="x" data-cx="'+i+'">x</span></span>').join('')+'</div>':'';}
-function scan(){const s=activeSat(),el=$('scan');if(!s)return;const fr=viewFrames(s),cnt={};for(const f of fr)cnt[f.bytes.length]=(cnt[f.bytes.length]||0)+1;
-  const len=+Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0],g=fr.filter(f=>f.bytes.length===len);if(g.length<6){el.innerHTML='<span class="dim">preciso de pelo menos 6 quadros do mesmo tamanho (tenho '+g.length+').</span>';return;}
+function scan(){const s=activeSat(),el=$('scan');if(!s)return;const fr=viewFrames(s),cnt={};for(const f of fr)cnt[wb(f).length]=(cnt[wb(f).length]||0)+1;
+  const len=+Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0],g=fr.filter(f=>wb(f).length===len);if(g.length<6){el.innerHTML='<span class="dim">preciso de pelo menos 6 quadros do mesmo tamanho (tenho '+g.length+').</span>';return;}
   const out=[];for(let off=0;off<len;off++)for(const type of['u8','u16be','u16le']){const c={off,type};if(off+FT[type][0]>len)continue;
-      if(type!=='u8'){const hi=type==='u16be'?off:off+1,b0=g[0].bytes[hi];if(g.every(f=>f.bytes[hi]===b0))continue;}
-      const v=g.map(f=>readField(f.bytes,c)),set=new Set(v);if(set.size<4)continue;const mn=Math.min(...v),mx=Math.max(...v);let tv=0;for(let i=1;i<v.length;i++)tv+=Math.abs(v[i]-v[i-1]);
+      if(type!=='u8'){const hi=type==='u16be'?off:off+1,b0=wb(g[0])[hi];if(g.every(f=>wb(f)[hi]===b0))continue;}
+      const v=g.map(f=>readField(wb(f),c)),set=new Set(v);if(set.size<4)continue;const mn=Math.min(...v),mx=Math.max(...v);let tv=0;for(let i=1;i<v.length;i++)tv+=Math.abs(v[i]-v[i-1]);
       const score=1-tv/(v.length-1)/(mx-mn);if(score>0.55)out.push({off,type,score,mn,mx,v});}
   out.sort((a,b)=>b.score-a.score);const top=out.slice(0,14);s._scan=top;
   el.innerHTML='<div class="dim">'+g.length+' quadros de '+len+' bytes, '+out.length+' candidatos</div><table><tr><th>offset</th><th>tipo</th><th>faixa</th><th>suavidade</th><th>série</th><th></th></tr>'+top.map((c,i)=>'<tr><td>'+c.off+' <span class="dim">0x'+c.off.toString(16)+'</span></td><td>'+c.type+'</td><td>'+c.mn+' .. '+c.mx+'</td><td>'+c.score.toFixed(2)+'</td><td><canvas class="spark" data-s="'+i+'"></canvas></td><td><button class="btn sm" data-add="'+i+'">+ campo</button></td></tr>').join('')+'</table>';
   el.querySelectorAll('canvas').forEach(cv=>spark(cv,top[+cv.dataset.s].v,'#58d3e8'));}
-function renderAll(){renderSats();renderTiles();renderCharts();renderFrames();renderDetail();renderRank();renderCustom();}
+
+// ---------- canivete suico ----------
+function knifeLoad(bytes,label){S.kn.bytes=Uint8Array.from(bytes);S.kn.label=label;S.kn.sel=0;knifeRun();}
+function knifeRun(){const K=S.kn;if(!K.bytes){renderKnife();return;}const r=KNIFE.apply(K.recipe,K.bytes);K.out=r.out;K.steps=r.steps;if(K.sel>=K.out.length)K.sel=0;renderKnife();}
+function renderKnife(){const K=S.kn,s=activeSat();
+  $('kn-src').textContent=K.bytes?K.label+' · '+K.bytes.length+' B':'nenhuma entrada: escolha um quadro ou cole hex';
+  $('kn-satrec').textContent=s&&s.recipe&&s.recipe.length?s.name+' usa: '+recipeText(s.recipe):'';
+  $('kn-steps').innerHTML=K.recipe.length?'<ol class="steps">'+K.recipe.map((st,i)=>{const r=K.steps[i]||{};return'<li><b>'+esc(KNIFE.OPS[st.op]?KNIFE.OPS[st.op].n:st.op)+'</b>'+(st.arg?' <span class="cy">'+esc(st.arg)+'</span>':'')+' <span class="dim">'+(r.inLen!=null?r.inLen+' B → '+r.outLen+' B':'')+'</span> '+(r.err?'<span class="bad">'+esc(r.err)+'</span>':'<span class="dim">'+esc(r.note||'')+'</span>')+' <span class="x" data-kx="'+i+'">x</span></li>';}).join('')+'</ol>':'<div class="dim">receita vazia: a saída é a própria entrada. Adicione operações para desembrulhar o quadro.</div>';
+  if(!K.out){$('kn-hex').innerHTML='';$('kn-an').innerHTML='';return;}
+  $('kn-hex').innerHTML=hexRich(K.out,null,{click:true,sel:K.sel});
+  const A=KNIFE.analyze(K.out),ins=KNIFE.inspect(K.out,K.sel);
+  let h='<div class="kv"><span>tamanho</span><span>'+A.len+' bytes</span><span>entropia</span><span>'+A.entropy.toFixed(2)+' bits/byte (máx. '+A.maxE.toFixed(2)+' para '+A.len+' B), '+A.distinct+' valores distintos (aleatório teria ~'+Math.round(A.expect)+'): '+esc(A.kind)+'</span><span>imprimível</span><span>'+Math.round(A.ascii*100)+'%</span>';
+  h+='<span>marcadores</span><span>'+(A.markers.length?A.markers.map(m=>esc(m.n)+': '+esc(m.where)).join('<br>'):'nenhum (ASM CCSDS, NGHam, AX100, HDLC, KISS, preâmbulos)')+'</span>';
+  h+='<span>indicativos</span><span>'+(A.calls.length?A.calls.map(c=>esc(c.cs)+' no byte '+c.at).join(', '):'nenhum indicativo AX.25 deslocado')+'</span>';
+  h+='<span>CRC no fim</span><span>'+(A.crc.length?A.crc.slice(0,4).map(esc).join('<br>'):'nenhum dos 12 CRCs conhecidos confere com os últimos 2 ou 4 bytes')+'</span>';
+  h+='<span>textos</span><span>'+(A.strings.length?A.strings.map(x=>'@'+x.at+' "'+esc(x.s.slice(0,40))+'"').join(' '):'nenhum trecho com 4 ou mais caracteres')+'</span></div>';
+  h+='<div class="sub">inspetor no byte '+K.sel+' (0x'+K.sel.toString(16)+')</div><div class="kv insp">'+ins.map(r=>'<span>'+esc(r[0])+'</span><span>'+esc(r[1])+'</span>').join('')+'</div>';
+  $('kn-an').innerHTML=h;}
+async function knifeTry(){const a=S.kn.out;if(!a||!a.length){log('canivete sem entrada','w');return;}const out=[];
+  const ax=ax25Parse(a);out.push(['AX.25',ax?'ok':'falha',ax?ax.src+' > '+ax.dest+' · '+ax.type+' · info '+ax.info.length+' B':axWhy(a)]);
+  const ng=nghamDecode(a);out.push(['NGHam',ng&&ng.crc?'ok':'falha',ng?nghamText(ng,a):'sem sync word nem size tag válida']);
+  for(const L of LAYOUTS){const r=spacelabDecode(L,a);out.push(['layout '+L.name,r.ok?'ok':'falha',r.ok?r.type+' via '+r.via+', '+r.ok+' campos':(r.att||[]).slice(0,2).join('; ')||'nada casou']);}
+  const csp=cspParse(a);if(csp)out.push(['CSP (hipótese)','pulado','prio '+csp.prio+' · '+csp.src+':'+csp.sport+' > '+csp.dst+':'+csp.dport+(csp.crc?' · CRC32C '+(csp.crc_ok?'OK':'não confere'):'')]);
+  $('kn-res').innerHTML=traceHtml(out.concat([['decoders oficiais','pulado','carregando...']]));
+  try{await loadPy();const s=activeSat();const rank=JSON.parse(PY.fn.force(JSON.stringify([toHex(a)]),JSON.stringify(s?s.prefer:[])));
+    out.push(['decoders oficiais',rank.length?'ok':'falha',rank.length?rank.length+' de '+PY.names.length+' aceitaram: '+rank.slice(0,8).map(r=>r.name+(r.preferred?' (cadastrado)':r.generic?' (permissivo)':'')).join(', '):'nenhum dos '+PY.names.length+' aceitou']);}
+  catch(e){out.push(['decoders oficiais','falha','motor oficial indisponível: '+e.message]);}
+  $('kn-res').innerHTML=traceHtml(out);}
+
+// ---------- decode especial: imagens das estacoes, waterfall, audio, APT e SSTV ----------
+const SSTV_MODES=['PD90','PD120','PD160','PD180','PD240','PD290','Robot36','MartinM1','MartinM2','ScottieS1','ScottieS2','ScottieDX'];
+const APT_SATS={25338:['NOAA 15','2025-08-15'],28654:['NOAA 18','2025-06-01'],33591:['NOAA 19','2025-08-10']},SP_DAY={25544:'2026-10-26'},LRPT_SATS={57166:1,59051:1,44387:1,40069:1};
+const SP={worker:null,job:0,res:[],busy:false,fallback:null};
+function specHint(s){if(!s)return'Escolha um satélite. APT funciona com os NOAA (histórico) e SSTV com a ISS nos eventos ARISS. Você também pode decodificar um arquivo de áudio seu.';
+  if(APT_SATS[s.norad])return'<b class="warn">'+APT_SATS[s.norad][0]+': imagens APT em 137 MHz.</b> Os NOAA-15, 18 e 19 foram desativados em 2025 (NOAA-18 em 06/06, NOAA-19 em 13/08, NOAA-15 em 19/08). Observações posteriores só têm ruído, e o decodificador recusa áudio sem o sincronismo do APT. Para uma imagem real, busque as observações de um dia anterior (o campo já vem com uma data antes da desativação). Observações antigas podem ter o áudio só no archive.org.';
+  if(s.norad===25544)return'<b class="warn">ISS: SSTV nos eventos ARISS.</b> PD120 em 145,800 MHz e, nos eventos de 2026, Robot36 em 437,550 MHz. Fora dos eventos não há imagem. Uma passagem pode trazer várias imagens: o decodificador procura cada cabeçalho VIS. Algumas estações já publicam a imagem (coluna IMG). O campo de data já vem com 26/10/2026, um dia de evento com Robot36.';
+  if(LRPT_SATS[s.norad])return'<b class="warn">METEOR-M: LRPT digital (QPSK, 72 kbit/s).</b> O áudio da observação não carrega esse sinal, então não dá para decodificar aqui: só as imagens que as estações publicam.';
+  return'Para satélites de telemetria, esta seção mostra o waterfall e o áudio de cada observação. APT e SSTV só fazem sentido em observações desses modos, mas você pode testar qualquer áudio.';}
+function spObsList(s){let L=[...s.obs.values()].sort((a,b)=>b.t-a.t);if(S.sp.img)L=L.filter(p=>p.img&&p.img.length);if(S.sp.aud)L=L.filter(p=>p.audio);return L;}
+function renderSpecial(){const s=activeSat();$('sp-hint').innerHTML=specHint(s);
+  if(s&&!$('sp-until').value&&(APT_SATS[s.norad]||SP_DAY[s.norad]))$('sp-until').value=APT_SATS[s.norad]?APT_SATS[s.norad][1]:SP_DAY[s.norad];
+  const el=$('sp-obs');if(!s){el.innerHTML='';$('sp-sub').textContent='';renderSpView();return;}
+  const L=spObsList(s),show=L.slice(0,80);$('sp-sub').textContent=s.name+': '+s.obs.size+' observações com produtos'+(L.length!==s.obs.size?', '+L.length+' no filtro':'');
+  el.innerHTML=show.length?'<table><tr><th>início UTC</th><th>estação</th><th>transmissor</th><th>produtos</th><th></th></tr>'+show.map(p=>{const st=S.stations[p.gs],cc=st&&st.cc;
+    return'<tr class="cl'+(S.sp.obs===p.id?' sel':'')+'" data-ob="'+p.id+'"><td>'+utc(p.t).slice(0,16)+'<br><a href="https://network.satnogs.org/observations/'+p.id+'/" target="_blank" rel="noopener">'+p.id+'</a></td><td>'+(cc?flag(cc)+' '+cc+' ':'')+esc(p.gs||'')+'<br><span class="dim">'+esc((p.station||'').slice(0,20))+'</span></td><td class="w">'+esc(p.mode||'')+(p.freq?' '+(p.freq/1e6).toFixed(3)+' MHz':'')+'<br><span class="dim">'+esc((p.desc||'').slice(0,28))+'</span></td><td>'+(p.img&&p.img.length?'<span class="tag of">IMG '+p.img.length+'</span> ':'')+(p.wf?'<span class="tag">WF</span> ':'')+(p.audio?'<span class="tag ax">ÁUDIO</span>':p.arch?'<span class="tag">ARQUIVO</span>':'')+(p.nfr?' <span class="dim">'+p.nfr+' quadros</span>':'')+'</td><td><button class="btn sm" data-sv="'+p.id+'">ver</button>'+(p.audio?'<br><button class="btn sm" data-sd="apt" data-id="'+p.id+'">APT</button><button class="btn sm" data-sd="sstv" data-id="'+p.id+'">SSTV</button>':'')+'</td></tr>';}).join('')+'</table>':'<div class="dim" style="padding:10px">nenhuma observação com imagem, waterfall ou áudio'+(s.obs.size?' neste filtro':'. Clique em [ BUSCAR E DECODIFICAR ] ou busque as observações de um dia.')+'</div>';
+  renderSpView();}
+function renderSpView(){const s=activeSat(),el=$('sp-view'),p=s&&S.sp.obs?s.obs.get(S.sp.obs):null;
+  if(!p){el.innerHTML='<span class="dim">Clique em "ver" numa observação para abrir as imagens que a estação publicou, o waterfall e o áudio.</span>';return;}
+  let h='<div class="row"><b>observação '+p.id+'</b><span class="dim">'+utc(p.t)+' UTC · '+esc(p.station||'')+' · '+esc(p.mode||'')+'</span></div>';
+  if(p.img&&p.img.length)h+='<div class="sub">imagens publicadas pela estação</div><div class="gal">'+p.img.map(u=>'<a href="'+esc(u)+'" target="_blank" rel="noopener" title="'+esc(u.split('/').pop())+'"><img loading="lazy" src="'+esc(u)+'" alt="imagem da estação"></a>').join('')+'</div>';
+  if(p.wf)h+='<div class="sub">waterfall (frequência x tempo)</div><div class="wf"><a href="'+esc(p.wf)+'" target="_blank" rel="noopener"><img loading="lazy" src="'+esc(p.wf)+'" alt="waterfall"></a></div>';
+  if(p.audio)h+='<div class="sub">áudio da observação</div><audio controls preload="none" src="'+esc(p.audio)+'" style="width:100%"></audio><div class="row" style="margin-top:6px"><button class="btn sm" data-sd="apt" data-id="'+p.id+'">decodificar APT</button><button class="btn sm" data-sd="sstv" data-id="'+p.id+'">decodificar SSTV</button><a class="btn sm" href="'+esc(p.audio)+'" download>baixar .ogg</a></div>';
+  else if(p.arch)h+='<div class="sub">áudio arquivado</div><div class="dim">Esta observação foi para o <a href="'+esc(p.arch)+'" target="_blank" rel="noopener">archive.org</a>. Baixe o .ogg de lá e use "decodificar arquivo de áudio" abaixo.</div>';
+  el.innerHTML=h;}
+function dspWorker(){if(SP.worker)return SP.worker;try{SP.worker=new Worker(URL.createObjectURL(new Blob([$('dsp').textContent],{type:'text/javascript'})));}catch(e){SP.worker=null;}return SP.worker;}
+function spProgress(p,msg){$('sp-bar').style.width=Math.round(Math.max(0,Math.min(1,p))*100)+'%';if(msg!=null)$('sp-msg').textContent=msg;}
+async function toSamples(buf,rate){const OAC=window.OfflineAudioContext||window.webkitOfflineAudioContext;if(!OAC)throw new Error('este navegador não tem Web Audio para ler o áudio');
+  const ctx=new OAC(1,2,rate);const ab=await new Promise((res,rej)=>{try{const p=ctx.decodeAudioData(buf,res,rej);if(p&&p.then)p.then(res,rej);}catch(e){rej(e);}}).catch(e=>{throw new Error('não consegui ler o áudio ('+(e&&e.message||'formato não suportado')+'). Se o navegador não abrir este formato, converta para WAV');});
+  const n=ab.numberOfChannels,x=new Float32Array(ab.length);for(let c=0;c<n;c++){const d=ab.getChannelData(c);for(let i=0;i<x.length;i++)x[i]+=d[i]/n;}return{x,dur:ab.duration};}
+function runDsp(cmd,x,fs,opt){const w=dspWorker();
+  if(!w){SP.fallback=SP.fallback||new Function($('dsp').textContent+'\nreturn DSP;')();return Promise.resolve(cmd==='apt'?SP.fallback.decodeAPT(x,fs,opt,spProgress):SP.fallback.decodeSSTV(x,fs,opt,spProgress));}
+  return new Promise((res,rej)=>{const job=++SP.job;const on=e=>{const d=e.data;if(d.type==='progress'){spProgress(0.1+0.9*d.p,d.msg);return;}if(d.job!==job)return;w.removeEventListener('message',on);d.type==='result'?res(d.result):rej(new Error(d.msg));};w.addEventListener('message',on);w.postMessage({cmd,samples:x,fs,opt,job},[x.buffer]);});}
+async function specDecode(buf,mode,label,meta){if(SP.busy){log('já há uma decodificação de áudio em andamento','w');return;}SP.busy=true;document.querySelectorAll('[data-sd],#sp-file').forEach(b=>b.disabled=true);
+  const kind=mode==='apt'?'apt':'sstv',s=activeSat();
+  try{spProgress(0.03,'lendo o áudio');const rate=kind==='apt'?16640:12000,{x,dur}=await toSamples(buf,rate);spProgress(0.1,'áudio de '+Math.round(dur)+' s, decodificando '+kind.toUpperCase());
+    const r=await runDsp(kind,x,rate,{mode:mode.split(':')[1]||'auto'});
+    if(kind==='apt'){SP.res.unshift({kind,label,meta,r,rot:false,view:'full'});const i=r.info;
+      log(label+': APT com '+i.linhas+' linhas ('+i.comSync+' com sincronismo), qualidade '+i.qualidade+', relógio '+i.erroRelogioPpm+' ppm','g');
+      dlogPush({key:s?s.key:'',sat:s?s.name:'arquivo',kind:'esp',cls:'esp',text:'APT '+label+': '+i.linhas+' linhas, '+i.comSync+' com Sync A, correlação média '+i.qualidade+', desvio do relógio '+i.erroRelogioPpm+' ppm, início aos '+i.inicioS+' s'});}
+    else{if(!r.images.length)throw new Error('nenhuma imagem SSTV encontrada: '+(r.vis.length?r.vis.length+' cabeçalho(s) VIS de modos não suportados':'nenhum cabeçalho VIS e nenhuma sequência longa de pulsos de sincronismo'));
+      r.images.slice().reverse().forEach(im=>SP.res.unshift({kind,label,meta,im}));
+      r.images.forEach(im=>{const i=im.info;const t='SSTV '+label+': '+im.mode+(i.vis!=null?' (VIS '+i.vis+', paridade '+i.paridade+', aos '+i.visEmS+' s)':' sem VIS (cadeia de '+i.cadeiaDePulsos+' pulsos)')+', '+i.linhasDecodificadas+' de '+i.linhasDoModo+' linhas, '+i.pulsosDeSync+' de '+i.pulsosEsperados+' pulsos de sincronismo, desvio do relógio '+i.erroRelogioPpm+' ppm';
+        log(t,'g');dlogPush({key:s?s.key:'',sat:s?s.name:'arquivo',kind:'esp',cls:'esp',text:t});});}
+    SP.res=SP.res.slice(0,12);spProgress(1,'pronto');renderSpRes();renderDlog();$('sp-res').scrollIntoView({behavior:'smooth',block:'nearest'});}
+  catch(e){log(label+': '+e.message,'e');spProgress(0,'falhou: '+e.message);dlogPush({key:s?s.key:'',sat:s?s.name:'arquivo',kind:'esp',cls:'falha',text:(kind==='apt'?'APT ':'SSTV ')+label+': '+e.message});renderDlog();}
+  finally{SP.busy=false;document.querySelectorAll('[data-sd],#sp-file').forEach(b=>b.disabled=false);}}
+async function specFromObs(id,kind){const s=activeSat(),p=s&&s.obs.get(+id);if(!p||!p.audio){log('esta observação não tem áudio disponível','w');return;}
+  const mode=kind==='apt'?'apt':($('sp-mode').value.startsWith('sstv')?$('sp-mode').value:'sstv:auto');
+  try{spProgress(0.01,'baixando o áudio da observação '+id);const r=await xfetch(p.audio);if(!r.ok)throw new Error('HTTP '+r.status+(r.status===404?': o áudio pode ter sido movido para o archive.org (abra a observação na Network)':''));
+    let buf;const total=+r.headers.get('content-length')||0;
+    if(r.body&&total){const rd=r.body.getReader(),parts=[];let got=0;for(;;){const{done,value}=await rd.read();if(done)break;parts.push(value);got+=value.length;spProgress(0.01+0.02*got/total,'baixando '+(got/1048576).toFixed(1)+' de '+(total/1048576).toFixed(1)+' MB');}
+      const all=new Uint8Array(got);let o=0;for(const v of parts){all.set(v,o);o+=v.length;}buf=all.buffer;}else buf=await r.arrayBuffer();
+    await specDecode(buf,mode,'obs '+id,{obs:id,station:p.station});}
+  catch(e){log('áudio da observação '+id+': '+why(e),'e');spProgress(0,'falhou: '+why(e));}}
+function drawRes(cv,R){if(R.kind==='apt'){const r=R.r,W=r.w,H=r.h,x0=R.view==='A'?86:R.view==='B'?1126:0,w=R.view==='full'?W:909;cv.width=w;cv.height=H;const g=cv.getContext('2d'),im=g.createImageData(w,H);
+    for(let y=0;y<H;y++)for(let x=0;x<w;x++){const sy=R.rot?H-1-y:y,sx=R.rot?(R.view==='full'?W-1-x:x0+908-x):x0+x,v=r.gray[sy*W+sx],o=(y*w+x)*4;im.data[o]=im.data[o+1]=im.data[o+2]=v;im.data[o+3]=255;}g.putImageData(im,0,0);}
+  else{const im=R.im;cv.width=im.w;cv.height=im.h;const g=cv.getContext('2d'),d=g.createImageData(im.w,im.h);d.data.set(im.rgba);g.putImageData(d,0,0);if(im.hDecoded<im.h){g.fillStyle='#14191c';g.fillRect(0,im.hDecoded,im.w,im.h-im.hDecoded);g.fillStyle='#4f6369';g.font='12px monospace';g.fillText('sem sinal depois da linha '+im.hDecoded,8,Math.min(im.h-8,im.hDecoded+18));}}}
+function renderSpRes(){const el=$('sp-res');el.innerHTML=SP.res.map((R,i)=>{let cap,btn='';
+    if(R.kind==='apt'){const n=R.r.info;cap='<b>APT</b> <span class="dim">'+esc(R.label)+' · '+n.linhas+' linhas · '+n.comSync+' com Sync A · correlação '+n.qualidade+' · relógio '+n.erroRelogioPpm+' ppm</span>';btn='<button class="btn sm" data-ra="rot" data-i="'+i+'">girar 180°</button><button class="btn sm" data-ra="A" data-i="'+i+'">canal A</button><button class="btn sm" data-ra="B" data-i="'+i+'">canal B</button><button class="btn sm" data-ra="full" data-i="'+i+'">linha completa</button>';}
+    else{const n=R.im.info;cap='<b>SSTV '+esc(R.im.mode)+'</b> <span class="dim">'+esc(R.label)+(n.vis!=null?' · VIS '+n.vis+' aos '+n.visEmS+' s':' · sem VIS')+' · '+n.linhasDecodificadas+'/'+n.linhasDoModo+' linhas · '+n.pulsosDeSync+'/'+n.pulsosEsperados+' pulsos · relógio '+n.erroRelogioPpm+' ppm</span>';}
+    return'<div class="res-card"><div class="row">'+cap+'<span style="flex:1"></span>'+btn+'<button class="btn sm" data-rd="'+i+'">baixar PNG</button><button class="btn sm" data-rx="'+i+'">x</button></div><canvas data-rc="'+i+'"'+(R.kind==='sstv'?' class="sstv"':'')+'></canvas></div>';}).join('');
+  el.querySelectorAll('canvas[data-rc]').forEach(cv=>drawRes(cv,SP.res[+cv.dataset.rc]));}
+
+function renderAll(){renderSats();renderTiles();renderCharts();renderFrames();renderDetail();renderSpecial();renderRank();renderCustom();renderKnife();renderDlog();}
 
 // ---------- quadros manuais e simulados ----------
-async function ingestManual(items,label){const s=activeSat();if(!s){log('selecione um satélite antes','w');return;}const n=addFrames(s,items);log(s.name+': '+n+' quadros '+label,'g');if(S.cfg.autoforce&&!s.layout&&s.decoder==='auto')await forceSat(s,true);else await decodeSat(s);renderAll();}
+async function ingestManual(items,label){const s=activeSat();if(!s){log('selecione um satélite antes','w');return;}const n=addFrames(s,items);log(s.name+': '+n+' quadros '+label,'g');if(S.cfg.autoforce&&!s.layout&&s.decoder==='auto')await forceSat(s,true);else await decodeSat(s,label);renderAll();}
 function parsePaste(txt){const out=[];for(const line of txt.split(/\r?\n/)){const l=line.trim();if(!l)continue;const m=/^(\d{4}-\d{2}-\d{2}[T ][\d:.]+Z?)\s*[|;,]\s*(.+)$/.exec(l);const hex=m?m[2]:l,b=fromHex(hex);if(b.length)out.push({t:m?Date.parse(m[1].replace(' ','T')+(/Z$/.test(m[1])?'':'Z')):Date.now()-out.length,bytes:b,src:'manual'});}return out;}
 function simulate(){const s=activeSat(),lay=s&&layoutOf(s);if(!lay){log('quadros simulados precisam de um satélite com layout SpaceLab (ex.: GOLDS-UFSC)','w');return;}
   let best=null;for(const l of lay.links)if(l.pn==='SLP')for(const t of l.types)if(!best||t.f.length>best.f.length)best=t;if(!best){log('layout sem tipo SLP para simular','w');return;}
@@ -674,8 +1512,8 @@ function simulate(){const s=activeSat(),lay=s&&layoutOf(s);if(!lay){log('quadros
   ingestManual(items,'SIMULADOS ('+best.name+')');}
 
 // ---------- exportacao ----------
-function exportJson(){const s=activeSat();if(!s)return;const o={meta:{satellite:s.name,norad_id:s.norad,generated_utc:new Date().toISOString(),engine:s.layout?'spacelab:'+s.layout:(s.decoder!=='auto'?s.decoder:s.auto),tool:'spacelab-dashboard v1.0.0',source:'SatNOGS (CC BY-SA)'},
-  frames:s.frames.map(f=>({timestamp_utc:new Date(f.t).toISOString(),observation_id:f.obs,station:f.gs||f.station||null,country:ccOf(f)||null,source:f.src,engine:f.dec?f.dec.engine:'',packet:f.dec?f.dec.label:'',fields:f.dec?f.dec.fields:{},raw_hex:f.hex}))};download(slug(s.name)+'-decoded.json',JSON.stringify(o,null,1),'application/json');}
+function exportJson(){const s=activeSat();if(!s)return;const o={meta:{satellite:s.name,norad_id:s.norad,generated_utc:new Date().toISOString(),engine:s.layout?'spacelab:'+s.layout:(s.decoder!=='auto'?s.decoder:s.auto),recipe:s.recipe||null,tool:'spacelab-dashboard v'+VERSION,source:'SatNOGS (CC BY-SA)'},
+  frames:s.frames.map(f=>({timestamp_utc:new Date(f.t).toISOString(),observation_id:f.obs,station:f.gs||f.station||null,country:ccOf(f)||null,source:f.src,engine:f.dec?f.dec.engine:'',packet:f.dec?f.dec.label:'',fields:f.dec?f.dec.fields:{},trace:f.dec?f.dec.trace:[],raw_hex:f.hex,work_hex:f.work?toHex(f.work):undefined}))};download(slug(s.name)+'-decoded.json',JSON.stringify(o,null,1),'application/json');}
 function exportCsv(){const s=activeSat();if(!s)return;const keys=[];const seen=new Set();for(const f of s.frames)if(f.dec)for(const k in f.dec.fields)if(!seen.has(k)){seen.add(k);keys.push(k);}
   const q=v=>{v=v==null?'':String(v);return/[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};const rows=[['timestamp_utc','observation_id','station','source','engine','packet',...keys,'raw_hex'].join(',')];
   for(const f of s.frames)rows.push([new Date(f.t).toISOString(),f.obs,f.gs||f.station,f.src,f.dec?f.dec.engine:'',f.dec?f.dec.label:'',...keys.map(k=>f.dec?f.dec.fields[k]:''),f.hex].map(q).join(','));download(slug(s.name)+'-decoded.csv',rows.join('\n'),'text/csv');}
@@ -683,13 +1521,14 @@ function exportCsv(){const s=activeSat();if(!s)return;const keys=[];const seen=n
 // ---------- diagnostico ----------
 async function diag(){log('testando enlaces...');await loadCatalog(true);const s=activeSat(),n=s&&s.norad||25544;
   try{setLed('net','wait');const j=await jget(API.net+'/observations/?format=json&status=good&norad_cat_id='+n+'&satellite__norad_cat_id='+n);const arr=(Array.isArray(j)?j:(j.results||[])).filter(o=>o.norad_cat_id==null||o.norad_cat_id===n);setLed('net','ok');log('Network API: OK, '+arr.length+' observações na primeira página (NORAD '+n+')','g');
-    const o=arr.find(x=>(x.demoddata||[]).length);if(o){try{setLed('media','wait');const r=await xfetch(o.demoddata[0].payload_demod);if(!r.ok)throw new Error('HTTP '+r.status);const b=await r.arrayBuffer();setLed('media','ok');log('Download de quadro: OK ('+b.byteLength+' bytes da observação '+o.id+')','g');}catch(e){setLed('media','bad');log('Download de quadro: '+why(e)+'. O coletor do repositório contorna isso.','e');}}else log('Nenhuma observação com demoddata na primeira página para testar download','w');
+    const o=arr.find(x=>(x.demoddata||[]).some(d=>!SKIPRX.test(d.payload_demod||'')));if(o){try{setLed('media','wait');const u=o.demoddata.find(d=>!SKIPRX.test(d.payload_demod||'')).payload_demod;const r=await xfetch(u);if(!r.ok)throw new Error('HTTP '+r.status);const b=await r.arrayBuffer();setLed('media','ok');log('Download de quadro: OK ('+b.byteLength+' bytes da observação '+o.id+')','g');}catch(e){setLed('media','bad');log('Download de quadro: '+why(e)+'. O coletor do repositório contorna isso.','e');}}else log('Nenhuma observação com quadros na primeira página para testar download','w');
   }catch(e){setLed('net','bad');log('Network API: '+why(e),'e');}
   try{const r=await fetch('data/index.json',{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();setLed('repo','ok');log('Repositório: data/index.json OK, atualizado em '+(j.updated||'?'),'g');}catch(e){setLed('repo','bad');log('Repositório: sem data/index.json ('+e.message+'). Normal antes do primeiro run do workflow.','w');}}
 
 // ---------- eventos ----------
 function bindCfg(id,key,type){const el=$(id);if(type==='c')el.checked=!!S.cfg[key];else el.value=S.cfg[key]??'';el.addEventListener('change',()=>{S.cfg[key]=type==='c'?el.checked:el.value;save();if(key==='auto')setAuto();});}
 let autoTimer=null;function setAuto(){clearInterval(autoTimer);if(S.cfg.auto)autoTimer=setInterval(fetchAll,300e3);}
+function selectFrame(key,t,h){const s=S.sats.find(x=>x.key===key);if(!s)return false;S.active=s.key;S.sel=s.frames.find(f=>f.t===t&&f.hex.startsWith(h))||null;renderAll();return!!S.sel;}
 function init(){
   let st=null;try{st=JSON.parse(localStorage.getItem(LS));}catch(e){}
   if(st){Object.assign(S.cfg,st.cfg||{});S.range=st.range||0;S.flt=FLT[st.flt]?st.flt:'ativos';S.prefs=st.prefs||{};}
@@ -702,11 +1541,11 @@ function init(){
   $('res').addEventListener('click',e=>{const d=e.target.closest('[data-n]');if(!d)return;const c=S.catalog.find(x=>x.n===+d.dataset.n);if(c)addSat({name:c.name,norad:c.n,prefer:c.dec});$('res').style.display='none';$('q').value='';});
   $('btn-add-norad').onclick=()=>{const v=parseInt($('q').value,10);if(!v){log('digite o número NORAD no campo de busca e clique em + NORAD','w');return;}const c=S.catalog.find(x=>x.n===v);addSat({name:c?c.name:'NORAD '+v,norad:v,prefer:c?c.dec:[]});$('q').value='';$('res').style.display='none';};
   $('presets').addEventListener('click',e=>{const d=e.target.closest('[data-p]');if(d)addSat(PRESETS[+d.dataset.p]);});
-  $('sel').addEventListener('click',e=>{const x=e.target.closest('[data-x]');if(x){removeSat(x.dataset.x);return;}const d=e.target.closest('[data-k]');if(d){S.active=d.dataset.k;S.sel=null;save();renderAll();loadTx(activeSat());}});
+  $('sel').addEventListener('click',e=>{const x=e.target.closest('[data-x]');if(x){removeSat(x.dataset.x);return;}const d=e.target.closest('[data-k]');if(d){S.active=d.dataset.k;S.sel=null;S.sp.obs=null;$('sp-until').value='';save();renderAll();loadTx(activeSat());}});
   $('satcfg').addEventListener('change',async e=>{const s=activeSat();if(!s)return;
     if(e.target.id==='sc-norad'){s.norad=parseInt(e.target.value,10)||null;s.tx=null;loadTx(s);syncNames();}
-    if(e.target.id==='sc-layout'){s.layout=e.target.value||null;await decodeSat(s);}
-    if(e.target.id==='sc-dec'){s.decoder=e.target.value;if(s.decoder!=='auto'&&s.decoder!=='none'&&!PY.ready){try{await loadPy();}catch(x){}}await decodeSat(s);}
+    if(e.target.id==='sc-layout'){s.layout=e.target.value||null;await decodeSat(s,'troca de layout');}
+    if(e.target.id==='sc-dec'){s.decoder=e.target.value;if(s.decoder!=='auto'&&s.decoder!=='none'&&!PY.ready){try{await loadPy();}catch(x){}}await decodeSat(s,'troca de decoder');}
     save();renderAll();});
   $('btn-fetch').onclick=fetchAll;
   $('btn-force').onclick=async()=>{const s=activeSat();if(!s)return;$('btn-force').disabled=true;try{await forceSat(s,false);}finally{$('btn-force').disabled=false;}renderAll();};
@@ -722,13 +1561,42 @@ function init(){
   $('ranges').addEventListener('click',e=>{const d=e.target.closest('[data-r]');if(!d)return;S.range=+d.dataset.r;save();renderTiles();renderCharts();renderFrames();});
   $('fields').addEventListener('change',()=>{const s=activeSat();if(!s)return;s.pins=Array.from($('fields').querySelectorAll('input:checked')).map(i=>i.dataset.f);save();renderCharts();});
   $('frames').addEventListener('click',e=>{if(e.target.closest('a'))return;const tr=e.target.closest('tr.cl');if(!tr)return;const s=activeSat();S.sel=s.frames.find(f=>f.t===+tr.dataset.t&&f.hex.startsWith(tr.dataset.h))||null;renderFrames();renderDetail();});
-  $('rank').addEventListener('click',async e=>{const b=e.target.closest('[data-use]');if(!b)return;const s=activeSat();s.decoder=b.dataset.use;await decodeSat(s);save();renderAll();});
-  $('scan').addEventListener('click',async e=>{const b=e.target.closest('[data-add]');if(!b)return;const s=activeSat(),c=s._scan[+b.dataset.add];s.custom.push({name:'o'+c.off+'_'+c.type,off:c.off,type:c.type,scale:1,unit:''});await decodeSat(s);save();renderAll();});
-  $('btn-cf').onclick=async()=>{const s=activeSat();if(!s)return;const off=parseInt($('cf-off').value,10);if(!(off>=0)){log('informe o offset do campo','w');return;}const type=$('cf-type').value;s.custom.push({name:slug($('cf-name').value||('o'+off+'_'+type)).replace(/-/g,'_'),off,type,scale:parseFloat($('cf-scale').value.replace(',','.'))||1,unit:$('cf-unit').value});await decodeSat(s);save();renderAll();};
-  $('custom').addEventListener('click',async e=>{const x=e.target.closest('[data-cx]');if(!x)return;const s=activeSat();s.custom.splice(+x.dataset.cx,1);await decodeSat(s);save();renderAll();});
+  $('rank').addEventListener('click',async e=>{const b=e.target.closest('[data-use]');if(!b)return;const s=activeSat();s.decoder=b.dataset.use;await decodeSat(s,'decoder escolhido no ranking');save();renderAll();});
+  $('scan').addEventListener('click',async e=>{const b=e.target.closest('[data-add]');if(!b)return;const s=activeSat(),c=s._scan[+b.dataset.add];s.custom.push({name:'o'+c.off+'_'+c.type,off:c.off,type:c.type,scale:1,unit:''});await decodeSat(s,'campo manual');save();renderAll();});
+  $('btn-cf').onclick=async()=>{const s=activeSat();if(!s)return;const off=parseInt($('cf-off').value,10);if(!(off>=0)){log('informe o offset do campo','w');return;}const type=$('cf-type').value;s.custom.push({name:slug($('cf-name').value||('o'+off+'_'+type)).replace(/-/g,'_'),off,type,scale:parseFloat($('cf-scale').value.replace(',','.'))||1,unit:$('cf-unit').value});await decodeSat(s,'campo manual');save();renderAll();};
+  $('custom').addEventListener('click',async e=>{const x=e.target.closest('[data-cx]');if(!x)return;const s=activeSat();s.custom.splice(+x.dataset.cx,1);await decodeSat(s,'campo manual removido');save();renderAll();});
+  // canivete
+  $('kn-op').innerHTML=Object.entries(KNIFE.OPS).map(([k,o])=>'<option value="'+k+'">'+esc(o.n)+'</option>').join('');
+  const opArg=()=>{const o=KNIFE.OPS[$('kn-op').value];$('kn-arg').placeholder=o.arg||'sem parâmetro';$('kn-arg').disabled=!o.arg;};$('kn-op').addEventListener('change',opArg);opArg();
+  $('kn-take').onclick=()=>{const s=activeSat(),f=S.sel;if(!f){log('selecione um quadro na tabela QUADROS primeiro','w');return;}knifeLoad(f.bytes,'quadro '+utc(f.t)+' de '+s.name);};
+  $('kn-load').onclick=()=>{const b=fromHex($('kn-in').value);if(!b.length){log('cole bytes em hexadecimal','w');return;}knifeLoad(b,'hex colado');};
+  $('kn-add').onclick=()=>{const op=$('kn-op').value,o=KNIFE.OPS[op];S.kn.recipe.push({op,arg:o.arg?$('kn-arg').value.trim():''});knifeRun();};
+  $('kn-clear').onclick=()=>{S.kn.recipe=[];knifeRun();};
+  $('kn-steps').addEventListener('click',e=>{const x=e.target.closest('[data-kx]');if(!x)return;S.kn.recipe.splice(+x.dataset.kx,1);knifeRun();});
+  $('kn-hex').addEventListener('click',e=>{const b=e.target.closest('[data-o]');if(!b)return;S.kn.sel=+b.dataset.o;renderKnife();});
+  $('kn-try').onclick=knifeTry;
+  $('kn-apply').onclick=async()=>{const s=activeSat();if(!s){log('selecione um satélite','w');return;}if(!S.kn.recipe.length){log('a receita está vazia','w');return;}s.recipe=S.kn.recipe.map(x=>({op:x.op,arg:x.arg}));s.auto=null;save();log(s.name+': receita aplicada a '+s.frames.length+' quadros: '+recipeText(s.recipe),'g');
+    if(S.cfg.autoforce&&!s.layout&&s.decoder==='auto')await forceSat(s,true);else await decodeSat(s,'receita do canivete');renderAll();};
+  $('kn-unapply').onclick=async()=>{const s=activeSat();if(!s||!s.recipe){log('o satélite ativo não tem receita','w');return;}s.recipe=null;save();await decodeSat(s,'receita removida');renderAll();};
+  // log de decodificacao
+  $('dl-flt').addEventListener('click',e=>{const a=e.target.closest('[data-ds]'),b=e.target.closest('[data-dk]');if(a)S.dlScope=a.dataset.ds;if(b)S.dlKind=b.dataset.dk;renderDlog();});
+  $('dlog').addEventListener('click',e=>{const d=e.target.closest('[data-t]');if(!d)return;if(selectFrame(d.dataset.k,+d.dataset.t,d.dataset.h))$('detail').scrollIntoView({behavior:'smooth',block:'start'});else log('esse quadro não está mais carregado','w');});
+  $('dl-exp').onclick=exportDlog;$('dl-clr').onclick=()=>{S.dlog=[];renderDlog();};
+  // decode especial
+  $('sp-mode').innerHTML='<option value="apt">APT (NOAA, 2400 Hz AM)</option><option value="sstv:auto" selected>SSTV: detectar pelo VIS</option>'+SSTV_MODES.map(m=>'<option value="sstv:'+m+'">SSTV: forçar '+m+'</option>').join('');
+  $('sp-img').addEventListener('change',e=>{S.sp.img=e.target.checked;renderSpecial();});$('sp-aud').addEventListener('change',e=>{S.sp.aud=e.target.checked;renderSpecial();});
+  $('sp-obs').addEventListener('click',e=>{const v=e.target.closest('[data-sv]');if(v){S.sp.obs=+v.dataset.sv;renderSpecial();return;}const d=e.target.closest('[data-sd]');if(d){specFromObs(d.dataset.id,d.dataset.sd);return;}const tr=e.target.closest('tr[data-ob]');if(tr&&!e.target.closest('a')){S.sp.obs=+tr.dataset.ob;renderSpecial();}});
+  $('sp-view').addEventListener('click',e=>{const d=e.target.closest('[data-sd]');if(d)specFromObs(d.dataset.id,d.dataset.sd);});
+  $('sp-file').addEventListener('change',async e=>{const file=e.target.files[0];e.target.value='';if(!file)return;await specDecode(await file.arrayBuffer(),$('sp-mode').value,file.name,{file:file.name});});
+  $('sp-older').onclick=async()=>{const s=activeSat();if(!s||!s.norad){log('escolha um satélite com NORAD','w');return;}const d=$('sp-until').value.trim();if(!/^\d{4}-\d{2}-\d{2}$/.test(d)){log('use a data no formato AAAA-MM-DD','w');return;}
+    $('sp-older').disabled=true;try{await fetchNetwork(s,0,{from:d+'T00:00:00Z',until:d+'T23:59:59Z',day:d,pages:8,noFrames:true});}finally{$('sp-older').disabled=false;}renderSpecial();renderTiles();};
+  $('sp-res').addEventListener('click',e=>{const a=e.target.closest('[data-ra]'),dl=e.target.closest('[data-rd]'),x=e.target.closest('[data-rx]');
+    if(a){const R=SP.res[+a.dataset.i];if(a.dataset.ra==='rot')R.rot=!R.rot;else R.view=a.dataset.ra;renderSpRes();}
+    if(dl){const R=SP.res[+dl.dataset.rd],cv=document.querySelector('canvas[data-rc="'+dl.dataset.rd+'"]');cv.toBlob(b=>download((R.kind==='apt'?'apt-':'sstv-'+R.im.mode+'-')+slug(R.label)+'.png',b,'image/png'),'image/png');}
+    if(x){SP.res.splice(+x.dataset.rx,1);renderSpRes();}});
   setInterval(()=>{$('clock').textContent=new Date().toISOString().slice(0,19).replace('T',' ')+' UTC';},1000);
   let rz;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(renderCharts,150);});
-  renderAll();setAuto();log('spacelab-dashboard pronto. '+LAYOUTS.length+' layouts SpaceLab embarcados: '+LAYOUTS.map(l=>l.name).join(', '));
+  renderAll();setAuto();log('spacelab-dashboard v'+VERSION+' pronto. '+LAYOUTS.length+' layouts SpaceLab embarcados: '+LAYOUTS.map(l=>l.name).join(', '));
   S.sats.forEach(s=>loadTx(s));
   (async()=>{
     try{const r=await fetch('satellites.json',{cache:'no-store'});if(r.ok){const j=await r.json();S.siteProxy=String(j.proxy||'').trim();(j.satellites||[]).forEach(x=>x.norad&&S.collected.add(x.norad));if(S.siteProxy)log('proxy do site ativo: '+S.siteProxy.replace(/^https:\/\//,'').split('/')[0]);}}catch(e){}
