@@ -177,6 +177,7 @@ footer{margin-top:40px;border-top:1px solid var(--ln);padding-top:12px;color:var
 
 <h2>STATUS(3) <small id="st-sub"></small></h2>
 <div class="sim-banner" id="sim-banner">ATENÇÃO: este satélite contém quadros SIMULADOS gerados localmente. Não são dados de órbita.</div>
+<div class="row" id="gsflt" style="margin-bottom:10px"></div>
 <div class="tiles" id="tiles"></div>
 
 <h2>TELEMETRIA(4) <small>séries temporais dos campos decodificados</small>
@@ -423,7 +424,7 @@ const PRESETS=[
 const LAYRX=[[/golds/i,'golds-ufsc'],[/floripa.?sat.?-?2/i,'floripasat-2a'],[/floripa.?sat/i,'floripasat-1'],[/catarina.?-?a1/i,'catarina-a1'],[/catarina.?-?a2/i,'catarina-a2'],[/catarina.?-?a3/i,'catarina-a3']];
 const RANGES=[['6h',6],['24h',24],['7d',168],['30d',720],['tudo',0]];
 const DEFAULT_PROXY='';   // URL do Worker; tambem pode vir de satellites.json (campo "proxy")
-const S={sats:[],active:null,range:0,sel:null,catalog:[],prefs:{},collected:new Set(),siteProxy:'',flt:'ativos',cfg:{station:'',max:300,allstatus:false,auto:false,autoforce:true,token:'',proxy:'',repo:true,net:true,db:false}};
+const S={sats:[],active:null,range:0,sel:null,catalog:[],prefs:{},collected:new Set(),stations:{},fGs:'',fCc:'',siteProxy:'',flt:'ativos',cfg:{station:'',max:300,allstatus:false,auto:false,autoforce:true,token:'',proxy:'',repo:true,net:true,db:false}};
 const PY={ready:false,p:null,py:null,names:[],ver:''};
 
 // ---------- utilidades ----------
@@ -578,7 +579,20 @@ document.addEventListener('mousemove',e=>{const cv=e.target,tip=$('tip');if(!(cv
   if(!best||bd>40){tip.style.display='none';return;}tip.textContent=best.s;tip.style.display='block';tip.style.left=Math.min(window.innerWidth-260,e.clientX+12)+'px';tip.style.top=(e.clientY+14)+'px';});
 
 // ---------- renderizacao ----------
-function viewFrames(sat){if(!S.range)return sat.frames;const t=Date.now()-S.range*36e5;return sat.frames.filter(f=>f.t>=t);}
+const ccOf=f=>{const s=f.gs!=null&&S.stations[f.gs];return s&&s.cc?s.cc:'';};
+const flag=cc=>/^[A-Z]{2}$/.test(cc)?String.fromCodePoint(...[...cc].map(c=>0x1F1E6+c.charCodeAt(0)-65)):'';
+let RN=null;function ccName(cc){if(!cc)return'país desconhecido';try{RN=RN||new Intl.DisplayNames(['pt-BR'],{type:'region'});return RN.of(cc)||cc;}catch(e){return cc;}}
+function baseFrames(sat){if(!S.range)return sat.frames;const t=Date.now()-S.range*36e5;return sat.frames.filter(f=>f.t>=t);}
+function viewFrames(sat){let fr=baseFrames(sat);if(S.fCc)fr=fr.filter(f=>(ccOf(f)||'??')===S.fCc);if(S.fGs)fr=fr.filter(f=>String(f.gs)===S.fGs);return fr;}
+function renderGsFilter(){const s=activeSat(),el=$('gsflt');if(!s||!s.frames.length){el.innerHTML='';S.fGs=S.fCc='';return;}
+  const base=baseFrames(s),C=new Map(),G=new Map();for(const f of base){const cc=ccOf(f)||'??';C.set(cc,(C.get(cc)||0)+1);}
+  if(S.fCc&&!C.has(S.fCc))S.fCc='';
+  for(const f of base){if(f.gs==null)continue;if(S.fCc&&(ccOf(f)||'??')!==S.fCc)continue;const k=String(f.gs);let g=G.get(k);if(!g){g={n:0,name:f.station||(S.stations[f.gs]&&S.stations[f.gs].n)||'',cc:ccOf(f)};G.set(k,g);}g.n++;}
+  if(S.fGs&&!G.has(S.fGs))S.fGs='';
+  const cs=[...C.entries()].sort((a,b)=>b[1]-a[1]),gs=[...G.entries()].sort((a,b)=>b[1].n-a[1].n),known=Object.keys(S.stations).length>0;
+  el.innerHTML='<label>país <select id="f-cc"><option value="">todos ('+cs.length+')</option>'+cs.map(([cc,n])=>'<option value="'+cc+'"'+(S.fCc===cc?' selected':'')+'>'+(cc==='??'?'desconhecido':flag(cc)+' '+esc(ccName(cc)))+' ('+n+')</option>').join('')+'</select></label>'+
+    '<label>estação terrena <select id="f-gs"><option value="">todas ('+gs.length+')</option>'+gs.map(([k,g])=>'<option value="'+esc(k)+'"'+(S.fGs===k?' selected':'')+'>'+esc(k)+' '+esc(g.name.slice(0,28))+(g.cc?' '+flag(g.cc)+' '+g.cc:'')+' ('+g.n+')</option>').join('')+'</select></label>'+
+    ((S.fCc||S.fGs)?'<button class="btn sm" id="f-clear">limpar filtro</button>':'')+(known?'':'<span class="dim">países indisponíveis até o coletor gravar data/stations.json</span>');}
 function renderSats(){$('presets').innerHTML=PRESETS.map((p,i)=>'<span class="chip" data-p="'+i+'">'+esc(p.name)+(p.note?' <span class="dim">'+esc(p.note)+'</span>':'')+'</span>').join('');
   $('sel').innerHTML=S.sats.length?S.sats.map(s=>'<span class="chip'+(s.key===S.active?' on':'')+'" data-k="'+esc(s.key)+'">'+esc(s.name)+' <span class="dim">'+(s.norad||'s/ NORAD')+' · '+s.frames.length+'</span><span class="x" data-x="'+esc(s.key)+'">x</span></span>').join(''):'<span class="dim">nenhum satélite. Use a busca ou os atalhos.</span>';
   renderSatCfg();}
@@ -592,11 +606,11 @@ function renderSatCfg(){const s=activeSat(),el=$('satcfg');if(!s){el.innerHTML='
   if(s.tx&&s.tx.length)h+='<div class="scroll" style="max-height:120px;margin-top:8px"><table><tr><th>transmissor (SatNOGS DB)</th><th>MHz</th><th>modo</th><th>baud</th><th></th></tr>'+s.tx.map(t=>'<tr><td class="w">'+esc(t.d||'')+'</td><td>'+(t.f/1e6).toFixed(3)+'</td><td>'+esc(t.m||'')+'</td><td>'+(t.b||'')+'</td><td class="'+(t.a?'ok':'dim')+'">'+(t.a?'ativo':'inativo')+'</td></tr>').join('')+'</table></div>';
   else if(!s.norad)h+='<div class="amb" style="margin-top:8px">Sem NORAD: use quadros colados, arquivos ou data/'+esc(slug(s.name))+'.json. Quando o SatNOGS DB criar a entrada (ID temporário 99xxx), preencha acima.</div>';
   el.innerHTML=h;}
-function renderTiles(){const s=activeSat(),el=$('tiles');if(!s){el.innerHTML='';$('st-sub').textContent='';return;}
+function renderTiles(){renderGsFilter();const s=activeSat(),el=$('tiles');if(!s){el.innerHTML='';$('st-sub').textContent='';return;}
   const fr=viewFrames(s),dec=fr.filter(isDecoded).length,gs=new Set(fr.map(f=>f.gs||f.station).filter(Boolean)).size,last=fr[fr.length-1];
   const eng=s.layout?'SpaceLab':(s.decoder!=='auto'?s.decoder:(s.auto||(PY.ready?'sem decoder':'nativo')));
   const sl=fr.filter(f=>f.dec&&f.dec.sl&&f.dec.sl.ngham),crc=sl.filter(f=>f.dec.sl.crc_ok).length,fixed=sl.reduce((a,f)=>a+Math.max(0,f.dec.sl.ngham.rs||0),0);
-  const T=[['quadros',fr.length,S.range?'na janela':'no total','SATNOGS'],['decodificados',fr.length?Math.round(dec/fr.length*100)+'%':'0%',dec+' de '+fr.length,'MOTOR'],['estações',gs,'receptoras distintas','SATNOGS'],['último quadro',last?'há '+ago(last.t):'nenhum',last?utc(last.t)+' UTC':'busque ou cole quadros','UTC'],['motor',eng,s.layout?'NGHam + layout '+s.layout:(isGuess(s)?'PALPITE: decoder de outro satélite':PY.ready?'satnogs-decoders '+PY.ver:'AX.25 / CSP / texto'),'DECODE']];
+  const T=[['quadros',fr.length,S.range?'na janela':'no total','SATNOGS'],['decodificados',fr.length?Math.round(dec/fr.length*100)+'%':'0%',dec+' de '+fr.length,'MOTOR'],['estações',gs,(()=>{const n=new Set(fr.map(ccOf).filter(Boolean)).size;return n?'em '+n+(n>1?' países':' país'):'receptoras distintas';})(),'SATNOGS'],['último quadro',last?'há '+ago(last.t):'nenhum',last?utc(last.t)+' UTC':'busque ou cole quadros','UTC'],['motor',eng,s.layout?'NGHam + layout '+s.layout:(isGuess(s)?'PALPITE: decoder de outro satélite':PY.ready?'satnogs-decoders '+PY.ver:'AX.25 / CSP / texto'),'DECODE']];
   if(s.layout)T.push(['CRC NGHam',sl.length?Math.round(crc/sl.length*100)+'%':'n/d',sl.length?crc+' de '+sl.length+', '+fixed+' bytes corrigidos por RS':'nenhum quadro NGHam','FEC']);
   el.innerHTML=T.map(t=>'<div class="tile"><span class="s">'+t[3]+'</span><div class="l">'+t[0]+'</div><div class="v" title="'+esc(t[1])+'">'+esc(t[1])+'</div><div class="u">'+esc(t[2])+'</div></div>').join('');
   $('st-sub').textContent=s.name+(s.norad?' · NORAD '+s.norad:'')+(s.busy?' · buscando...':'');$('sim-banner').style.display=s.frames.some(f=>f.src==='sim')?'block':'none';}
@@ -619,7 +633,7 @@ function summary(f){const d=f.dec;if(!d)return'';if(d.engine==='sl'||d.engine===
 function renderFrames(){const s=activeSat(),el=$('frames');if(!s){el.innerHTML='';return;}const fr=viewFrames(s),show=fr.slice(-300).reverse();
   $('fr-sub').textContent=fr.length?'mostrando '+show.length+' de '+fr.length+', mais recentes primeiro':'';
   const guess=isGuess(s);el.innerHTML='<table><tr><th>UTC</th><th>origem</th><th>estação</th><th>B</th><th>motor</th><th>resumo</th></tr>'+show.map(f=>{const e=guess&&f.dec&&f.dec.engine==='of'?['cu','PALPITE']:(ENG[f.dec&&f.dec.engine]||['','BRUTO']);
-    return'<tr class="cl'+(S.sel===f?' sel':'')+'" data-t="'+f.t+'" data-h="'+f.hex.slice(0,24)+'"><td>'+utc(f.t)+'</td><td><span class="tag'+(f.src==='sim'?' sim':'')+'">'+esc(f.src.toUpperCase())+'</span>'+(f.obs?' <a href="https://network.satnogs.org/observations/'+encodeURIComponent(f.obs)+'/" target="_blank" rel="noopener">'+esc(f.obs)+'</a>':'')+'</td><td>'+esc(f.gs||'')+' <span class="dim">'+esc((f.station||'').slice(0,18))+'</span></td><td>'+f.bytes.length+'</td><td><span class="tag '+e[0]+'">'+e[1]+'</span></td><td class="w">'+esc(summary(f))+'</td></tr>';}).join('')+'</table>'+(show.length?'':'<div class="dim" style="padding:12px">sem quadros</div>');}
+    return'<tr class="cl'+(S.sel===f?' sel':'')+'" data-t="'+f.t+'" data-h="'+f.hex.slice(0,24)+'"><td>'+utc(f.t)+'</td><td><span class="tag'+(f.src==='sim'?' sim':'')+'">'+esc(f.src.toUpperCase())+'</span>'+(f.obs?' <a href="https://network.satnogs.org/observations/'+encodeURIComponent(f.obs)+'/" target="_blank" rel="noopener">'+esc(f.obs)+'</a>':'')+'</td><td>'+(ccOf(f)?'<span title="'+esc(ccName(ccOf(f)))+'">'+flag(ccOf(f))+' '+ccOf(f)+'</span> ':'')+esc(f.gs||'')+' <span class="dim">'+esc((f.station||'').slice(0,18))+'</span></td><td>'+f.bytes.length+'</td><td><span class="tag '+e[0]+'">'+e[1]+'</span></td><td class="w">'+esc(summary(f))+'</td></tr>';}).join('')+'</table>'+(show.length?'':'<div class="dim" style="padding:12px">sem quadros</div>');}
 function hexdump(a){let o='';for(let i=0;i<a.length;i+=16){const row=a.slice(i,i+16);o+='<span class="o">'+i.toString(16).padStart(4,'0')+'</span>  '+Array.from(row,hex2).join(' ').padEnd(47,' ')+'  <span class="a">'+esc(toAscii(row))+'</span>\n';}return o;}
 function renderDetail(){const s=activeSat(),el=$('detail');if(S.sel&&(!s||!s.frames.includes(S.sel)))S.sel=null;const f=S.sel;if(!s||!f){el.innerHTML='<span class="dim">Clique em um quadro para abrir o hexdump, as camadas detectadas e os campos.</span>';return;}
   const d=f.dec||decodeNative(f),e=ENG[d.engine]||['','BRUTO'];let h='<div class="row"><b>'+utc(f.t)+' UTC</b><span class="tag '+e[0]+'">'+e[1]+'</span><span class="dim">'+f.bytes.length+' bytes'+(d.label?' · '+esc(d.label):'')+'</span><span style="flex:1"></span><button class="btn sm" id="d-force">forçar todos neste quadro</button><button class="btn sm" id="d-copy">copiar hex</button></div>';
@@ -661,7 +675,7 @@ function simulate(){const s=activeSat(),lay=s&&layoutOf(s);if(!lay){log('quadros
 
 // ---------- exportacao ----------
 function exportJson(){const s=activeSat();if(!s)return;const o={meta:{satellite:s.name,norad_id:s.norad,generated_utc:new Date().toISOString(),engine:s.layout?'spacelab:'+s.layout:(s.decoder!=='auto'?s.decoder:s.auto),tool:'spacelab-dashboard v1.0.0',source:'SatNOGS (CC BY-SA)'},
-  frames:s.frames.map(f=>({timestamp_utc:new Date(f.t).toISOString(),observation_id:f.obs,station:f.gs||f.station||null,source:f.src,engine:f.dec?f.dec.engine:'',packet:f.dec?f.dec.label:'',fields:f.dec?f.dec.fields:{},raw_hex:f.hex}))};download(slug(s.name)+'-decoded.json',JSON.stringify(o,null,1),'application/json');}
+  frames:s.frames.map(f=>({timestamp_utc:new Date(f.t).toISOString(),observation_id:f.obs,station:f.gs||f.station||null,country:ccOf(f)||null,source:f.src,engine:f.dec?f.dec.engine:'',packet:f.dec?f.dec.label:'',fields:f.dec?f.dec.fields:{},raw_hex:f.hex}))};download(slug(s.name)+'-decoded.json',JSON.stringify(o,null,1),'application/json');}
 function exportCsv(){const s=activeSat();if(!s)return;const keys=[];const seen=new Set();for(const f of s.frames)if(f.dec)for(const k in f.dec.fields)if(!seen.has(k)){seen.add(k);keys.push(k);}
   const q=v=>{v=v==null?'':String(v);return/[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};const rows=[['timestamp_utc','observation_id','station','source','engine','packet',...keys,'raw_hex'].join(',')];
   for(const f of s.frames)rows.push([new Date(f.t).toISOString(),f.obs,f.gs||f.station,f.src,f.dec?f.dec.engine:'',f.dec?f.dec.label:'',...keys.map(k=>f.dec?f.dec.fields[k]:''),f.hex].map(q).join(','));download(slug(s.name)+'-decoded.csv',rows.join('\n'),'text/csv');}
@@ -703,6 +717,8 @@ function init(){
       else if(/\.(txt|hex|csv)$/i.test(file.name))items.push(...parsePaste(new TextDecoder().decode(buf)));
       else items.push({t:tsFromUrl(file.name)||file.lastModified||Date.now(),bytes:buf,src:'arquivo'});}
     e.target.value='';if(items.length)ingestManual(items,'de arquivo');});
+  $('gsflt').addEventListener('change',e=>{if(e.target.id==='f-cc'){S.fCc=e.target.value;S.fGs='';}if(e.target.id==='f-gs')S.fGs=e.target.value;S.sel=null;renderTiles();renderCharts();renderFrames();renderDetail();});
+  $('gsflt').addEventListener('click',e=>{if(e.target.id!=='f-clear')return;S.fGs=S.fCc='';renderTiles();renderCharts();renderFrames();});
   $('ranges').addEventListener('click',e=>{const d=e.target.closest('[data-r]');if(!d)return;S.range=+d.dataset.r;save();renderTiles();renderCharts();renderFrames();});
   $('fields').addEventListener('change',()=>{const s=activeSat();if(!s)return;s.pins=Array.from($('fields').querySelectorAll('input:checked')).map(i=>i.dataset.f);save();renderCharts();});
   $('frames').addEventListener('click',e=>{if(e.target.closest('a'))return;const tr=e.target.closest('tr.cl');if(!tr)return;const s=activeSat();S.sel=s.frames.find(f=>f.t===+tr.dataset.t&&f.hex.startsWith(tr.dataset.h))||null;renderFrames();renderDetail();});
@@ -716,6 +732,7 @@ function init(){
   S.sats.forEach(s=>loadTx(s));
   (async()=>{
     try{const r=await fetch('satellites.json',{cache:'no-store'});if(r.ok){const j=await r.json();S.siteProxy=String(j.proxy||'').trim();(j.satellites||[]).forEach(x=>x.norad&&S.collected.add(x.norad));if(S.siteProxy)log('proxy do site ativo: '+S.siteProxy.replace(/^https:\/\//,'').split('/')[0]);}}catch(e){}
+    try{const r=await fetch('data/stations.json',{cache:'no-store'});if(r.ok){const j=await r.json();S.stations=j.stations||{};log('estações terrenas: '+Object.keys(S.stations).length+' com país (coletor, '+(j.updated||'?')+')');}}catch(e){}
     $('cfg-proxy').placeholder=proxyBase()||'https://seu-worker.workers.dev/?url=';
     await loadCatalog(false);for(const s of S.sats){await fetchSat(s);}if(S.sats.length)renderAll();})();
 }

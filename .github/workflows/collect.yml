@@ -21,6 +21,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Instalar pacote de paises (opcional)
+        continue-on-error: true
+        run: pip install --quiet reverse_geocoder
       - name: Coletar quadros
         env:
           SATNOGS_DB_TOKEN: ${{ secrets.SATNOGS_DB_TOKEN }}
