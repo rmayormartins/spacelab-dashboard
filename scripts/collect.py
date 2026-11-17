@@ -89,33 +89,76 @@ def load(path, default):
         return default
 
 
-def collect_network(norad, cfg, done_obs):
-    """Lista observacoes e baixa os quadros das que ainda nao foram vistas."""
-    q = {"format": "json", "satellite__norad_cat_id": norad}
+def sat_id_of(norad):
+    """Identificador SatNOGS (sat_id) do satelite, usado como filtro alternativo."""
+    try:
+        body, _ = http(f"{DB}/satellites/?format=json&norad_cat_id={norad}", tries=2)
+        for s in json.loads(body):
+            if s.get("norad_cat_id") == norad and s.get("sat_id"):
+                return s["sat_id"]
+    except Exception as e:
+        print(f"  sat_id indisponivel: {explain(e)}", flush=True)
+    return None
+
+
+def first_page(norad, cfg):
+    """Descobre qual filtro de satelite a Network API respeita.
+
+    A API ignora em silencio parametros que nao conhece e devolve observacoes
+    de qualquer satelite. Por isso cada candidato so e aceito se TODAS as
+    observacoes devolvidas forem do NORAD pedido.
+    """
+    base = {"format": "json"}
     if cfg.get("only_good", True):
-        q["status"] = "good"
+        base["status"] = "good"
     if cfg.get("station"):
-        q["ground_station"] = cfg["station"]
+        base["ground_station"] = cfg["station"]
     if cfg.get("days"):
         since = datetime.now(timezone.utc) - timedelta(days=int(cfg["days"]))
-        q["start"] = since.strftime("%Y-%m-%dT%H:%M:%SZ")
-    url = f"{NET}/observations/?{urllib.parse.urlencode(q)}"
-    frames, pages, seen = [], 0, []
-    budget = int(cfg.get("max_frames", 400))
-    while url and pages < int(cfg.get("max_pages", 6)) and len(frames) < budget:
+        base["start"] = since.strftime("%Y-%m-%dT%H:%M:%SZ")
+    candidates = [("satellite__norad_cat_id", norad), ("norad_cat_id", norad), ("norad", norad)]
+    empty, ignored = None, []
+    for i in range(4):
+        if i == 3:
+            sid = sat_id_of(norad)
+            if not sid:
+                break
+            key, val = "sat_id", sid
+        else:
+            key, val = candidates[i]
+        url = f"{NET}/observations/?{urllib.parse.urlencode({**base, key: val})}"
         body, headers = http(url)
         page = json.loads(body)
         page = page if isinstance(page, list) else page.get("results", [])
-        pages += 1
+        got = {o.get("norad_cat_id") for o in page}
+        if page and got == {norad}:
+            print(f"  filtro aceito: {key} ({len(page)} observacoes na 1a pagina)", flush=True)
+            return page, headers
         if not page:
-            break
+            empty = (page, headers)
+            print(f"  filtro {key}: pagina vazia", flush=True)
+        else:
+            ignored.append(key)
+            print(f"  filtro {key}: ignorado pela API (veio NORAD {sorted(x for x in got if x)[:5]})", flush=True)
+        time.sleep(0.5)
+    if empty:
+        return empty
+    raise RuntimeError("a API ignorou os filtros de satelite testados: " + ", ".join(ignored))
+
+
+def collect_network(norad, cfg, done_obs):
+    """Lista observacoes do satelite e baixa os quadros das que ainda nao foram vistas."""
+    frames, pages, seen = [], 0, []
+    budget = int(cfg.get("max_frames", 400))
+    page, headers = first_page(norad, cfg)
+    while page and len(frames) < budget:
+        pages += 1
         for obs in page:
             oid = obs.get("id")
-            demod = obs.get("demoddata") or []
-            if oid in done_obs:
+            if obs.get("norad_cat_id") != norad or oid in done_obs:
                 continue
             ok = True
-            for item in demod:
+            for item in obs.get("demoddata") or []:
                 furl = item.get("payload_demod")
                 if not furl or SKIP_EXT.search(furl):
                     continue
@@ -141,7 +184,12 @@ def collect_network(norad, cfg, done_obs):
             if ok and obs.get("status") != "future":
                 seen.append(oid)
         url = next_link(headers)
+        if not url or pages >= int(cfg.get("max_pages", 6)):
+            break
         time.sleep(0.5)
+        body, headers = http(url)
+        page = json.loads(body)
+        page = page if isinstance(page, list) else page.get("results", [])
     return frames, seen
 
 
@@ -190,6 +238,8 @@ def main():
             continue
         path = os.path.join(DATA, f"{norad}.json")
         old = load(path, {})
+        if old.get("schema") != 2:  # caches antigos podiam misturar satelites
+            old = {}
         frames = old.get("frames", [])
         done = set(old.get("obs_done", []))
         print(f"{name} ({norad}): {len(frames)} quadros em cache", flush=True)
@@ -217,6 +267,7 @@ def main():
         frames = sorted(merged.values(), key=lambda f: f["t"])[-int(cfg.get("max_frames", 400)):]
         changed = len(frames) != len(old.get("frames", [])) or bool(new)
         out = {
+            "schema": 2,
             "norad": norad,
             "name": name,
             "updated": now if changed else old.get("updated", now),

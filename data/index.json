@@ -1,26 +1,26 @@
 {
- "updated": "2026-11-16T23:08:41Z",
+ "updated": "2026-11-16T23:31:19Z",
  "satellites": [
   {
    "norad": 60237,
    "name": "GRBBeta",
    "frames": 300,
-   "last": "2026-11-16T23:08:38Z",
-   "updated": "2026-11-16T23:08:41Z"
+   "last": "2026-11-16T23:11:00Z",
+   "updated": "2026-11-16T23:31:19Z"
   },
   {
    "norad": 59112,
    "name": "SONATE-2",
-   "frames": 300,
-   "last": "2026-11-16T23:11:06Z",
-   "updated": "2026-11-16T23:08:41Z"
+   "frames": 292,
+   "last": "2026-11-16T16:53:04Z",
+   "updated": "2026-11-16T23:31:19Z"
   },
   {
    "norad": 44885,
    "name": "FloripaSat-1",
-   "frames": 300,
-   "last": "2026-11-16T23:13:29Z",
-   "updated": "2026-11-16T23:08:41Z"
+   "frames": 6,
+   "last": "2026-05-17T12:07:03Z",
+   "updated": "2026-11-16T23:31:19Z"
   }
  ]
 }
