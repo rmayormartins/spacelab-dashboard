@@ -1,6 +1,6 @@
 # spacelab-dashboard
 
-Dashboard estático (GitHub Pages) que busca quadros demodulados na rede SatNOGS e tenta decodificar telemetria e beacons dos satélites selecionados. Também transforma o áudio das observações em imagem: APT dos NOAA e SSTV da ISS. O manual completo está no fim da própria página (seção MANUAL).
+Dashboard estático (GitHub Pages) que recebe quadros dos satélites selecionados pela rede SatNOGS, por um RTL-SDR ligado ao computador (WebUSB no Chrome) ou por arquivos, e tenta decodificar telemetria e beacons. Prevê as passagens sobre a sua estação, com Doppler, e liga o receptor sozinho no AOS. Também transforma o áudio das observações em imagem: APT dos NOAA e SSTV da ISS. O manual completo está no fim da própria página (seção MANUAL).
 
 Author Ramon Mayor Martins, Ph.D. // @rmayormartins // IFSC SJ - Área de Telecomunicações // PU4MAY
 
@@ -23,6 +23,7 @@ Author Ramon Mayor Martins, Ph.D. // @rmayormartins // IFSC SJ - Área de Teleco
 | `worker/worker.js` | Proxy no Cloudflare para as APIs do SatNOGS |
 | `data/<norad>.json` | Quadros (`frames`) e produtos das últimas 60 observações (`obs`: imagens da estação, waterfall, áudio) |
 | `data/catalog.json`, `data/stations.json` | Catálogo com transmissores ativos e país de cada estação |
+| `data/tle.json` | TLEs para passagens e Doppler (SatNOGS DB, com o Celestrak para os satélites do `satellites.json` e do `tle_extra` que faltarem), renovadas a cada 12 h |
 
 ## Motores de decodificação
 
@@ -38,6 +39,16 @@ Ferramentas para quadros que nenhum motor reconhece, na seção FORCA_BRUTA:
 - **Força bruta**: roda os 169 decoders oficiais numa amostra e ordena quem aceitou.
 - **Canivete suíço**: receita de operações em sequência (recorte, inversões de bits e bytes, XOR, deslocamento de bits, NRZI, G3RUH, Manchester, CCSDS, HDLC com FCS, KISS, NGHam, Reed-Solomon 255,223 e outras), com análises automáticas (entropia, marcadores de sincronismo mesmo desalinhados, indicativos AX.25, CRC no fim em 12 algoritmos, textos) e um inspetor de bytes. Uma receita que funcionou pode ser aplicada a todos os quadros do satélite.
 - **Laboratório de bytes**: varredura de offsets com variação suave e campos manuais (offset, tipo, escala).
+
+## Recepção por RTL-SDR
+
+Aba RTL-SDR da seção RECEPCAO, no Chrome, Edge ou Opera do computador (WebUSB). O receptor sintoniza o transmissor do satélite escolhido, corrige o Doppler pela TLE, demodula FSK, GMSK e AFSK e procura quadros NGHam, AX.25 (com e sem G3RUH), AX100 (ASM+Golay e modo RS) e U482C (com Viterbi). Os quadros entram na mesma cascata de motores dos quadros do SatNOGS, com a etiqueta SDR. Tem waterfall, monitor de áudio, gravação de áudio FM e de IQ, decodificação de SSTV e APT a partir do áudio FM, "ligar sozinho nas passagens" e um simulador para testar sem dongle. A mesma cadeia demodula arquivos IQ (cu8, cs8, cs16, cf32, WAV estéreo), arquivos de áudio FM e o áudio das observações do SatNOGS (botão "quadros" no DECODE_ESPECIAL).
+
+No Linux é preciso tirar o driver de TV do kernel (`sudo rmmod dvb_usb_rtl28xxu` e um blacklist em `/etc/modprobe.d/`); no Windows, instalar o WinUSB pelo Zadig. Detalhes, validação com gravações reais e sensibilidade medida estão no MANUAL da página.
+
+## Passagens
+
+Seção PASSAGENS: estação (coordenadas, id SatNOGS ou localização do navegador), TLE de cada satélite selecionado, tabela "agora", mapa com traço e área de visada, linha do tempo, lista de passagens com contagem regressiva, gráfico polar e curva de Doppler, aviso antes do AOS e exportação para a agenda (.ics). Satélites sem NORAD aceitam TLE colada ou uma órbita sintética para testes.
 
 ## Decode especial: imagens e áudio
 
@@ -56,7 +67,7 @@ Também aceita um arquivo de áudio seu (WAV, OGG, MP3 ou FLAC).
 - SatNOGS DB `/api/telemetry/` com o seu token (fica só no localStorage; para o coletor, crie o secret `SATNOGS_DB_TOKEN`).
 - Colar hexadecimal, enviar arquivos ou gerar quadros simulados (sempre marcados como SIM).
 
-Parâmetros de URL: `?sats=60237,59112&station=<id>`.
+Parâmetros de URL: `?sats=60237,59112&station=<id>`. No `satellites.json`, `tle_extra` lista NORADs que não estão no coletor mas devem ter TLE guardada (ISS, NOAA, METOP...).
 
 ## Proxy
 
@@ -72,5 +83,8 @@ O atalho GOLDS-UFSC já usa o layout do `spacelab-decoder` (VHF 145.900 MHz 1200
 - Layouts de pacotes: [spacelab-decoder](https://github.com/spacelab-ufsc/spacelab-decoder), SpaceLab/UFSC, GPLv3.
 - Decoders oficiais: [satnogs-decoders](https://gitlab.com/librespacefoundation/satnogs/satnogs-decoders), AGPLv3, carregados em tempo de execução.
 - NGHam: protocolo de Jon Petter Skagmo (LA3JPA); implementação conferida contra o [pyngham](https://github.com/mgm8/pyngham).
+- Driver RTL-SDR por WebUSB: [webrtlsdr](https://github.com/jtarrio/webrtlsdr), Jacobo Tarrío, Apache 2.0, embutido sem alterações.
+- SGP4: [satellite.js](https://github.com/shashwatak/satellite-js), MIT. Mapa: Natural Earth (domínio público).
+- Receptor testado com as gravações do [satellite-recordings](https://github.com/daniestevez/satellite-recordings) e conferido com o [gr-satellites](https://github.com/daniestevez/gr-satellites) (Daniel Estévez); passagens e Doppler conferidos com o Skyfield.
 
 Como o `index.html` embute os layouts do spacelab-decoder, distribua este projeto sob GPLv3 ou compatível.
