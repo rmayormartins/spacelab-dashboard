@@ -281,6 +281,58 @@ def collect_stations(now):
     print(f"estacoes: {len(out)} em {pages} paginas, {len(set(codes) - {''})} paises", flush=True)
 
 
+def tle_name(t0):
+    t0 = (t0 or "").strip()
+    return t0[2:] if t0.startswith("0 ") else t0
+
+
+def collect_tle(now, norads):
+    """Grava data/tle.json (TLEs para passagens e Doppler no painel), no maximo a cada 12 h.
+
+    Fonte principal: SatNOGS DB. Satelites do satellites.json que faltarem vem do Celestrak.
+    """
+    path = os.path.join(DATA, "tle.json")
+    old = load(path, {})
+    try:
+        age = datetime.now(timezone.utc) - datetime.strptime(old["updated"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+        if old.get("tle") and age < timedelta(hours=12):
+            print(f"TLE: cache de {old['updated']} ainda valido", flush=True)
+            return
+    except (KeyError, ValueError):
+        pass
+    out, url, pages = {}, f"{DB}/tle/?format=json", 0
+    try:
+        while url and pages < 50:
+            body, _ = http(url, timeout=120)
+            j = json.loads(body)
+            rows = j if isinstance(j, list) else j.get("results", [])
+            for t in rows:
+                n = t.get("norad_cat_id")
+                if n and t.get("tle1") and t.get("tle2"):
+                    out[str(n)] = [tle_name(t.get("tle0")), t["tle1"].strip(), t["tle2"].strip(), "SatNOGS DB" + (" (" + t["tle_source"] + ")" if t.get("tle_source") else "")]
+            url = j.get("next") if isinstance(j, dict) else None
+            pages += 1
+    except Exception as e:
+        note("warning", f"TLE do SatNOGS DB falhou: {explain(e)}")
+    for n in norads:
+        if str(n) in out:
+            continue
+        try:
+            body, _ = http(f"https://celestrak.org/NORAD/elements/gp.php?CATNR={n}&FORMAT=TLE", tries=2, timeout=40)
+            ls = [x.strip() for x in body.splitlines() if x.strip()]
+            i = next((k for k, x in enumerate(ls) if x.startswith("1 ")), -1)
+            if i >= 0 and i + 1 < len(ls) and ls[i + 1].startswith("2 "):
+                out[str(n)] = [ls[i - 1] if i > 0 else "", ls[i], ls[i + 1], "Celestrak"]
+            time.sleep(0.3)
+        except Exception as e:
+            print(f"  TLE Celestrak {n}: {explain(e)}", flush=True)
+    if not out:
+        raise RuntimeError("nenhuma TLE obtida")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump({"updated": now, "tle": out}, f, separators=(",", ":"), ensure_ascii=False)
+    print(f"TLE: {len(out)} satelites", flush=True)
+
+
 def main():
     cfg = load(os.path.join(ROOT, "satellites.json"), None)
     if not cfg:
@@ -378,6 +430,10 @@ def main():
         collect_stations(now)
     except Exception as e:
         note("warning", f"lista de estacoes falhou: {explain(e)}")
+    try:
+        collect_tle(now, [s.get("norad") for s in cfg.get("satellites", []) if s.get("norad")] + list(cfg.get("tle_extra", [])))
+    except Exception as e:
+        note("warning", f"TLE falhou: {explain(e)}")
     old_index = load(os.path.join(DATA, "index.json"), {})
     if old_index.get("satellites") != index:
         with open(os.path.join(DATA, "index.json"), "w", encoding="utf-8") as f:
